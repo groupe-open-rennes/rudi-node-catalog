@@ -1,0 +1,47 @@
+# --------------------------------------------------------------------------------------------------
+# Notes:
+# - jobs are executed in the order indicated at root "stages" property
+# - "needs" property needs an array of job names (not stages names)
+# - linter needs install:dev as eslint and prettier are dev dependencies
+# --------------------------------------------------------------------------------------------------
+
+stages:
+  - install_dev
+  - install_prod
+
+#---------------------------------------------------------------------------------------------------
+# INSTALL
+#---------------------------------------------------------------------------------------------------
+install:dev:
+  stage: install_dev
+  rules:
+    - if: $CI_COMMIT_BRANCH == "release"
+      when: always
+    - if: $CI_COMMIT_BRANCH != "release"
+      when: manual
+  tags:
+    - nodejs-20
+  variables:
+    NODE_ENV: development
+  script:
+    - npm config set @aqmo.org:registry https://repository.aqmo.org/npm/
+    - npm i || (npm cache clean --force && npm i)
+    - npm run lint
+
+#---------------------------------------------------------------------------------------------------
+# INSTALL
+#---------------------------------------------------------------------------------------------------
+install:prod:
+  stage: install_prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == "release"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH != "release"
+      when: manual
+  tags:
+    - nodejs-20
+  variables:
+    NODE_ENV: production
+  script:
+    - npm config set @aqmo.org:registry https://repository.aqmo.org/npm/
+    - npm i

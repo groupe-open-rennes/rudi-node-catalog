@@ -1,0 +1,101 @@
+const mod = 'logCtrl'
+// -------------------------------------------------------------------------------------------------
+// External dependencies
+// -------------------------------------------------------------------------------------------------
+import _ from 'lodash'
+const { pick } = _
+
+// -------------------------------------------------------------------------------------------------
+// Constants
+// -------------------------------------------------------------------------------------------------
+import {
+  ACT_SEARCH,
+  OBJ_LOGS,
+  QUERY_COUNT_BY,
+  QUERY_COUNT_BY_CAML,
+  QUERY_FIELDS,
+  QUERY_FILTER,
+  QUERY_LIMIT,
+  QUERY_OFFSET,
+  QUERY_SEARCH_TERMS,
+  QUERY_SORT_BY,
+  QUERY_SORT_BY_CAML,
+  URL_PV_LOGS_ACCESS,
+} from '../config/constApi.js'
+
+// -------------------------------------------------------------------------------------------------
+// Internal dependencies
+// -------------------------------------------------------------------------------------------------
+import { RudiError } from '../utils/errors.js'
+import { isEmptyArray } from '../utils/jsUtils.js'
+import { logD, logT, logW } from '../utils/logging.js'
+
+import { getLogEntries, searchDbObjects } from '../db/dbQueries.js'
+import { parseQueryParameters } from '../utils/parseRequest.js'
+
+// -------------------------------------------------------------------------------------------------
+// Logs API access
+// -------------------------------------------------------------------------------------------------
+
+export const getLogs = async (req, reply) => {
+  const fun = 'getLogs'
+  try {
+    logD(mod, fun, `GET ${URL_PV_LOGS_ACCESS}`)
+    let parsedParameters
+    try {
+      parsedParameters = await parseQueryParameters(OBJ_LOGS, req.url)
+    } catch (err) {
+      logW(mod, fun, err)
+      return []
+    }
+    const options = pick(parsedParameters, [QUERY_LIMIT, QUERY_OFFSET, QUERY_FILTER, QUERY_FIELDS])
+
+    const logLines = await getLogEntries(options)
+    return logLines //.map((logLine) => logLineToString(logLine))
+  } catch (err) {
+    // consoleErr(mod, fun, err)
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const searchLogs = async (req, reply) => {
+  const fun = 'searchObjects'
+  logT(mod, fun, `< GET ${URL_PV_LOGS_ACCESS}/${ACT_SEARCH}`)
+  try {
+    // retrieve url parameters: object type, object id
+    const objectType = OBJ_LOGS
+
+    let parsedParameters
+    try {
+      parsedParameters = await parseQueryParameters(objectType, req.url)
+    } catch (err) {
+      logW(mod, fun, err)
+      return []
+    }
+
+    // If there w
+    if (isEmptyArray(parsedParameters)) {
+      logW(mod, fun, 'No search parameters given')
+      return []
+    } else {
+      // logW(mod, fun, `Parsed parameters: ${beautify(parsedParameters)}`)
+    }
+
+    const options = pick(parsedParameters, [
+      QUERY_COUNT_BY_CAML,
+      QUERY_COUNT_BY,
+      QUERY_FIELDS,
+      QUERY_FILTER,
+      QUERY_LIMIT,
+      QUERY_OFFSET,
+      QUERY_SEARCH_TERMS,
+      QUERY_SORT_BY_CAML,
+      QUERY_SORT_BY,
+    ])
+    const objectList = await searchDbObjects(objectType, options)
+
+    return objectList
+  } catch (err) {
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
