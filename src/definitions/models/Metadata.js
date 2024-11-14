@@ -40,6 +40,7 @@ import {
   API_FILE_MIME,
   API_FILE_STATUS_UPDATE,
   API_FILE_STORAGE_STATUS,
+  API_GDPR_SENSITIVE,
   API_GEO_BBOX_EAST,
   API_GEO_BBOX_NORTH,
   API_GEO_BBOX_PROPERTY,
@@ -140,7 +141,7 @@ import { isPortalConnectionDisabled } from '../../config/confPortal.js'
 import { getPublicUrl } from '../../config/confSystem.js'
 import { getLicenceCodes } from '../../controllers/licenceController.js'
 import { VALID_API_VERSION, VALID_URI } from '../schemaValidators.js'
-import { isMediaMissing, MediaTypes } from './Media.js'
+import { isMediaMissing, isMimeTypePortalCompatible, MediaTypes } from './Media.js'
 
 // -------------------------------------------------------------------------------------------------
 // Fields with specific treatments
@@ -599,6 +600,14 @@ async function checkLicence(metadata) {
     throw RudiError.treatError(mod, fun, err)
   }
 }
+async function checkGDPR(metadata) {
+  if (metadata?.[API_ACCESS_CONDITION]?.[API_CONFIDENTIALITY]) {
+    if (metadata[API_ACCESS_CONDITION][API_CONFIDENTIALITY][API_GDPR_SENSITIVE] == null) {
+      metadata[API_ACCESS_CONDITION][API_CONFIDENTIALITY][API_GDPR_SENSITIVE] = false
+      delete metadata[API_ACCESS_CONDITION][API_CONFIDENTIALITY][API_GDPR_SENSITIVE]
+    }
+  }
+}
 async function checkFileTypes(metadata) {
   const fun = 'checkFileTypes'
   try {
@@ -765,81 +774,6 @@ const updateMetadataStatus = (metadata) => {
   metadata[API_STATUS_PROPERTY] = reckonMetadataStatus(metadata)
 }
 
-const PORTAL_MIMES = [
-  'application/geo+json',
-  'application/graphql',
-  'application/javascript',
-  'application/json',
-  'application/ld+json',
-  'application/msword',
-  'application/pdf',
-  'application/sql',
-  'application/vnd.api+json',
-  'application/vnd.ms-excel',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.oasis.opendocument.text',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/x-executable',
-  'application/x-www-form-urlencoded',
-  'application/xml',
-  'application/zip',
-  'application/zstd',
-  'audio/mpeg',
-  'audio/ogg',
-  'image/apng',
-  'image/flif',
-  'image/gif',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/x-mng',
-  'multipart/form-data',
-  'text/css',
-  'text/csv',
-  'text/html',
-  'text/php',
-  'text/plain',
-  'text/x-yaml',
-  'text/xml',
-  'application/graphql+crypt',
-  'application/javascript+crypt',
-  'application/json+crypt',
-  'application/ld+json+crypt',
-  'application/msword+crypt',
-  'application/pdf+crypt',
-  'application/sql+crypt',
-  'application/vnd.api+json+crypt',
-  'application/vnd.ms-excel+crypt',
-  'application/vnd.ms-powerpoint+crypt',
-  'application/vnd.oasis.opendocument.text+crypt',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation+crypt',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet+crypt',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document+crypt',
-  'application/x-executable+crypt',
-  'application/x-www-form-urlencoded+crypt',
-  'application/xml+crypt',
-  'application/zip+crypt',
-  'application/zstd+crypt',
-  'audio/mpeg+crypt',
-  'audio/ogg+crypt',
-  'image/apng+crypt',
-  'image/flif+crypt',
-  'image/gif+crypt',
-  'image/jpeg+crypt',
-  'image/png+crypt',
-  'image/webp+crypt',
-  'image/x-mng+crypt',
-  'multipart/form-data+crypt',
-  'text/css+crypt',
-  'text/csv+crypt',
-  'text/html+crypt',
-  'text/php+crypt',
-  'text/plain+crypt',
-  'text/x-yaml+crypt',
-  'text/xml+crypt',
-]
 export const toRudiPortalJSON = (metadata) => {
   const fun = 'toRudiPortalJSON'
   try {
@@ -852,10 +786,16 @@ export const toRudiPortalJSON = (metadata) => {
     portalReadyMetadata[API_MEDIA_PROPERTY].forEach((media) => {
       delete media[API_FILE_STORAGE_STATUS]
       delete media[API_FILE_STATUS_UPDATE]
-      if (media[API_FILE_MIME] == MIME_MARKDOWN || media[API_FILE_MIME] == ALT_MIME_MARKDOWN)
-        media[API_FILE_MIME] = 'text/plain'
-      else if (PORTAL_MIMES.indexOf(media[API_FILE_MIME]) == -1) {
-        media[API_FILE_MIME] = 'application/octet-stream'
+      if (media[API_MEDIA_TYPE] == MediaTypes.File) {
+        if (media[API_FILE_MIME] == MIME_MARKDOWN || media[API_FILE_MIME] == ALT_MIME_MARKDOWN)
+          media[API_FILE_MIME] = 'text/plain'
+        else if (!isMimeTypePortalCompatible(media)) {
+          throw new BadRequestError(
+            `This MIME type is not accepted by the RUDI portal: '${media[API_FILE_MIME]}' (file ${media[API_MEDIA_ID]} in metadata ${metadata[API_METADATA_ID]})`
+          )
+        }
+      } else {
+        if (media[API_FILE_MIME]) delete media[API_FILE_MIME]
       }
       // delete media[API_MEDIA_THUMBNAIL]
       // delete media[API_MEDIA_SATELLITES]
@@ -865,7 +805,16 @@ export const toRudiPortalJSON = (metadata) => {
     delete portalReadyMetadata[API_INTEGRATION_ERROR_ID]
     delete portalReadyMetadata[API_STATUS_PROPERTY]
     delete portalReadyMetadata[API_METAINFO_PROPERTY][API_METAINFO_SOURCE_PROPERTY]
+    delete portalReadyMetadata[API_METAINFO_PROPERTY][API_METAINFO_DATES][API_DATES_PUBLISHED]
+    delete portalReadyMetadata[API_RESTRICTED_ACCESS]
 
+    if (portalReadyMetadata?.[API_ACCESS_CONDITION]?.[API_CONFIDENTIALITY]) {
+      if (
+        portalReadyMetadata[API_ACCESS_CONDITION][API_CONFIDENTIALITY][API_GDPR_SENSITIVE] == null
+      ) {
+        delete portalReadyMetadata[API_ACCESS_CONDITION][API_CONFIDENTIALITY][API_GDPR_SENSITIVE]
+      }
+    }
     return portalReadyMetadata
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
@@ -875,8 +824,12 @@ export const toRudiPortalJSON = (metadata) => {
 export const setMetadataStatusToSent = (metadata) => {
   const fun = 'setMetadataStatusToSent'
   try {
-    metadata[DB_PUBLISHED_AT] = null // `delete mongooseDocument.field` doesn't work!!!!
-    metadata[API_INTEGRATION_ERROR_ID] = null
+    metadata[DB_PUBLISHED_AT] = undefined // `delete mongooseDocument.field` doesn't work!!!!
+    delete metadata[DB_PUBLISHED_AT]
+
+    metadata[API_INTEGRATION_ERROR_ID] = undefined
+    delete metadata[API_INTEGRATION_ERROR_ID]
+
     metadata[API_STATUS_PROPERTY] = MetadataStatus.Sent
     return MetadataStatus.Sent
   } catch (err) {
@@ -892,7 +845,7 @@ export const setMetadataStatusToSent = (metadata) => {
  * @returns the metadata information as a JSON object
  */
 MetadataSchema.methods.toJSON = function () {
-  logT(mod, 'MetadataSchema.toJSON')
+  // logT(mod, 'MetadataSchema.toJSON')
   return omit(this.toObject(), FIELDS_TO_SKIP)
 }
 
@@ -1002,10 +955,12 @@ MetadataSchema.pre('save', async function () {
     await checkThesaurus(metadata)
     await checkFileTypes(metadata)
 
+    await checkGDPR(metadata)
     // await checkMetadataSource(metadata)
     // await checkMedia(metadata)
 
     updateMetadataStatus(metadata)
+    delete metadata[API_RESTRICTED_ACCESS] // Virtual setter, see 'src/definitions/models/Metadata.js'
 
     logT(mod, fun, `pre save checks OK`)
   } catch (err) {
@@ -1015,6 +970,17 @@ MetadataSchema.pre('save', async function () {
     throw RudiError.treatError(mod, fun, err)
   }
   // next()
+})
+
+MetadataSchema.pre('insertMany', async function (next, docs) {
+  const fun = 'pre-insertMany hook'
+  try {
+    docs.map(async function (doc) {
+      delete doc[API_RESTRICTED_ACCESS]
+    })
+  } catch (err) {
+    throw RudiError.treatError(mod, fun, err)
+  }
 })
 
 // MetadataSchema.post('save', async function (metadata, next) {

@@ -674,7 +674,8 @@ export const newMetadata = async (rudiMetadata) => {
       await updateMetadataStorageState(dbMetadata)
 
     logI(mod, fun, `finalMetadata: ${beautify(finalMetadata)}`)
-    if (areAllMediaAvailable) sendToPortal(finalMetadata)
+
+    if (areAllMediaAvailable && !isPortalConnectionDisabled()) sendToPortal(finalMetadata)
 
     return finalMetadata
   } catch (err) {
@@ -697,7 +698,7 @@ export const overwriteMetadata = async (incomingRudiMetadata) => {
 
     const { metadata: finalMetadata, areAllMediaAvailable } =
       await updateMetadataStorageState(dbMetadata)
-    if (areAllMediaAvailable) sendToPortal(finalMetadata)
+    if (areAllMediaAvailable && !isPortalConnectionDisabled()) sendToPortal(finalMetadata)
 
     return finalMetadata
   } catch (err) {
@@ -731,7 +732,11 @@ const updateMetadataStorageState = async (dbMetadata, newState = StorageStatus.O
 
     if (dbMetadata[API_STORAGE_STATUS] !== metadata[API_STORAGE_STATUS]) {
       dbMetadata[API_STORAGE_STATUS] = metadata[API_STORAGE_STATUS]
-      if (!dbMetadata[API_INTEGRATION_ERROR_ID]) await dbMetadata.save()
+      try {
+        if (!dbMetadata[API_INTEGRATION_ERROR_ID]) await dbMetadata.save()
+      } catch (err) {
+        logE(mod, fun + `.${dbMetadata[API_METADATA_ID]}`, err)
+      }
     }
 
     if (metadata[API_INTEGRATION_ERROR_ID]) {
@@ -739,7 +744,7 @@ const updateMetadataStorageState = async (dbMetadata, newState = StorageStatus.O
       await dbMetadata.save()
       logD(mod, fun, 'Integration error flag removed')
     }
-    logT(mod, fun, `dbMetadata: ${dbMetadata}`)
+    // logT(mod, fun, `dbMetadata: ${dbMetadata}`)
 
     const msg = `Metadata is ${areAllMediaAvailable ? '' : 'not '}sendable: ${dbMetadata[API_METADATA_ID]}`
     logD(mod, fun, msg)
@@ -775,8 +780,16 @@ export const commitMedia = async (req, res) => {
       metadataIdList.push(dbMetadata[API_METADATA_ID])
       promiseList.push(updateMetadataStorageState(dbMetadata))
     })
-    await Promise.all(promiseList)
-
+    const metadataList = await Promise.all(promiseList)
+    metadataList.forEach((metadataInfo) => {
+      const { metadata, areAllMediaAvailable } = metadataInfo
+      logD(
+        mod,
+        fun,
+        `Metadata '${metadata[API_METADATA_ID]}' areAllMediaAvailable=${areAllMediaAvailable}`
+      )
+      if (areAllMediaAvailable && !isPortalConnectionDisabled()) sendToPortal(metadata)
+    })
     return {
       status: 'OK',
       media: pick(savedMedia, [
@@ -847,7 +860,7 @@ export const commitMediaForMetadata = async (req, res) => {
     result.metadata = pick(dbMetadata, [API_METADATA_ID, API_STORAGE_STATUS])
     logD(mod, fun, `Media commit success : ${beautify(result)}`)
 
-    sendToPortal(finalMetadata)
+    if (!isPortalConnectionDisabled()) sendToPortal(finalMetadata)
     return res.code(200).send(result)
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
@@ -915,6 +928,8 @@ export const sendManyMetadataToPortal = async (req) => {
 export const sendToPortal = (metadata) => {
   const fun = 'sendToPortal'
   try {
+    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+
     const metaId = metadata[API_METADATA_ID]
     logT(mod, fun, `${metaId}`)
     return sendMetadataToPortal(metaId)
