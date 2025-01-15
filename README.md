@@ -1,37 +1,49 @@
-<br>
-<p align="center">
-  <a href="https://rudi.rennesmetropole.fr/">
-  <img src="https://blog.rudi.bzh/wp-content/uploads/2020/11/logo_bleu_orange.svg" width=100px alt="Rudi logo" />  </a>
-</p>
+# RUDI producer proxy API module: access to Producer node resources metadata
 
-<h2 align="center" >RUDI Node Catalog</h3>
-<p align="center">Interface RESTful permettant d'accéder aux métadonnées des ressources exposées publiquement sur le nœud producteur de RUDI</p>
+_This module offers a RESTful interface to access the RUDI metadata publically exposed on the RUDI Producer node.
+It also makes it possible to upload metadata from another module such as the Producer node manager (https://gitlab.aqmo.org/rudidev/rudi-console-proxy)_
 
-<p align="center"><a href="https://rudi.rennesmetropole.fr/">🌐 Instance de Rennes Métropole</a> · <a href="doc.rudi.bzh">📚 Documentation</a> ·  <a href="https://blog.rudi.bzh/">📰 Blog</a><p>
+##### Author: Olivier Martineau (community@rudi-univ-rennes1.fr)
 
-## 🎯 Fonctionnalités
+---
 
-- API publique pour la consultation des métadonnées open-data
-- API interne pour la gestion complète des métadonnées (CRUD)
-- Compatibilité avec [la spécification RUDI](https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER)
+## List of features
 
-## 🚀 Environnements
+The API module provides :
 
-- **release** : environnement de pré-production compatible avec le portail Rennes Métropole
-- **shared** : environnement de développement pour tests d'intégration
-- **test** : environnement de test pour déploiement distant
+- A definition of the RUDI metadata that is compatible with the definition (https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER)
+- An external API for fetching open-data metadata (public and accessible without any authentification)
+- An internal API for creating, accessing, updating and deleting metadata (https://app.swaggerhub.com/apis/OlivierMartineau/RudiProducer-InternalAPI)
 
-## 🛣 Routes API
+---
 
-### Redirections
-```
-GET /api              → GET /api/v1/resources
-GET /api/v1           → GET /api/v1/resources
-GET /resources        → GET /api/v1/resources
-GET /resources/*      → GET /api/v1/resources/*
-```
+## Current deployment
 
-### Sans authentification requise
+- **release**: production-like environment used to ensure the compatibility with Rennes Métropole's RUDI Portal. This version is the one to be deployed in production.
+- **shared**: development environment used to ensure the compatibility with the other modules of the RUDI Producer node
+- **test**: environment used to test that the current code can be executed on a distant node
+
+---
+
+## Public API
+
+_See https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER/ for further information_
+
+**Use example:**
+
+> GET https://data-rudi.org/api/v1/resources?limit=10&fields=global_id,resource_title&updated_after=2021-07
+
+---
+
+## Redirected routes
+
+- `GET /api` -> `GET /api/v1/resources`
+- `GET /api/v1` -> `GET /api/v1/resources`
+- `GET /resources` -> `GET /api/v1/resources`
+- `GET /resources/*` -> `GET /api/v1/resources/*`
+
+## No authentification required
+
 - `GET /api/version`
 - `GET /api/admin/hash`
 - `GET /api/admin/apphash`
@@ -39,132 +51,163 @@ GET /resources/*      → GET /api/v1/resources/*
 - `GET /api/v1/resources`
 - `GET /api/v1/resources/:id`
 
-### Authentification portail requise
-- `PUT /api/v1/resources/*`
+## Portal authentification required
+
+- `PUT /resources/*`-> `PUT /api/v1/resources/*`
+- `PUT /resources/:id/report`
 - `PUT /api/v1/resources/:id/report`
 - `GET /api/v1/resources/:id/report`
 - `GET /api/v1/resources/:id/report/:irid`
 
-### Authentification RUDI prod requise
+## Rudi prod authentification required, action on objects
 
-#### Gestion des objets
 - `POST /api/admin/:object`
 - `PUT /api/admin/:object`
 - `GET /api/admin/:object`
 - `GET /api/admin/:object/:id`
 - `DELETE /api/admin/:object/:id`
 - `DELETE /api/admin/:object`
-
-#### Gestion des rapports
+- `POST /api/admin/:object/deletion`
+- `GET /api/admin/:object/unlinked`
+- `GET /api/admin/:object/search`
+- `GET /api/admin/search`
 - `POST /api/admin/:object/:id/reports`
 - `PUT /api/admin/:object/:id/reports`
 - `GET /api/admin/:object/:id/reports`
+- `GET /api/admin/:object/:id/reports/:irid`
 - `GET /api/admin/:object/reports`
+- `DELETE /api/admin/:object/:id/reports/:irid`
 - `DELETE /api/admin/:object/:id/reports`
+- `POST /api/admin/:object/:id/reports/deletion`
 
-#### Actions système
+## Rudi prod authentification + app driven actions
+
 - `GET /api/admin/nv`
 - `GET /api/admin/enum`
+- `GET /api/admin/enum/:code`
+- `GET /api/admin/enum/:code/:lang`
 - `GET /api/admin/licences`
+- `GET /api/admin/licence_codes`
+- `POST /api/admin/licences/init`
+- `POST /api/admin/resources/init`
 - `GET /api/admin/id_generation`
+- `GET /api/admin/portal/token`
+- `GET /api/admin/portal/token/check`
+- `GET /api/admin/portal/resources/:id`
+- `POST /api/admin/portal/resources/:id`
+- `DELETE /api/admin/portal/resources/:id`
+- `POST /api/admin/portal/resources/send`
 - `GET /api/admin/logs`
+- `GET /api/admin/logs/:lines`
+- `GET /api/admin/logs/search`
 - `GET /api/admin/db`
-
-#### Vérifications
+- `DELETE /api/admin/db/:object`
+- `DELETE /api/admin/db`
 - `GET /api/admin/check/node/url`
 - `GET /api/admin/check/portal/url`
 - `GET /api/admin/check/portal/resources`
 - `GET /api/admin/check/portal/ids`
 
-## ⚙️ Configuration
+---
 
-### Fichiers de configuration
-```ini
-# 0-ini/conf_default.ini : Configuration par défaut
-# 0-ini/conf_custom.ini : Configuration personnalisée
-```
+## Configuration
 
-### Sécurité
-```ini
-[security]
-should_control_private_requests = true
-profiles = chemin/vers/profiles.ini
-```
+Configuration files can be found in the **"0-ini" directory**.
 
-## 🔒 Authentification JWT
+- `0-ini/conf_default.ini`: default configuration and use examples
+- `0-ini/conf_custom.ini`: user configuration, to be created (if defined, the value of the path variable `RUDI_API_USER_CONF` is taken as the full path of the custom INI file)
 
-### En-têtes requis
-- `alg` : Algorithme JWT (EdDSA recommandé)
+**`Security` section**
+When the flag `should_control_private_requests` is true, JWT from incoming requests are controlled.
 
-### Payload requis
-- `exp` : Date d'expiration (epoch)
-- `sub` : Profil reconnu
-- `req_mtd` : Méthode HTTP
-- `req_url` : URL de la requête
+The parameter `profiles` indicates the path where is located the security file.
 
-### Payload optionnels
-- `jti` : Identifiant unique du token (UUID v4)
-- `iat` : Date de génération du token (epoch)
-- `client_id` : Identifiant de l'utilisateur
+This security file defines the "profiles" for each client that can connect on the internal side of the API.
+They are defined each by a section whose **name** reflects the `sub` payload field in the JWT.
 
-### Exemple d'utilisation cURL
-```bash
-# Création du token
-JWT=`curl -X POST --user $USR:$PWD \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"exp\":$DATE,
-    \"sub\":\"$SUB\",
-    \"req_mtd\":\"$MTD\",
-    \"req_url\":\"$URL\",
-    \"client_id\":\"$CID\"
-  }" \
-  $NODE/crypto/jwt/forge`
+In this section,
 
-# Vérification du token
-curl -X POST --user $USR:$PWD \
-  -H 'Content-Type: application/json' \
-  -d "\"$JWT\"" \
-  $NODE/crypto/jwt/check
+- `pub_key` indicates the path where is stored the public key associated with the subject
+- `routes[]` indicates the name of a route that is allowed for the user (see "0-ini/profiles.ini" file for a list of route names)
 
-# Envoi de la requête
+---
+
+## Security
+
+### Required header fields for RUDI JWT
+
+- `alg`: the JWT algorithm (preferably "EdDSA"). It must correspond to the algorithm used to create the private key used to generate this token signature (preferably ed25519).
+
+### Required payload fields for RUDI JWT
+
+- `exp`: desired expiration date in Epoch seconds
+- `sub`: a recognized "profile" configuration.
+- `req_mtd`: the http method used in the request
+- `req_url`: the URL of the request
+
+### Optional payload fields for RUDI JWT
+
+- `jti` (jwt identifier): a UUIDv4 identifying this JSON web token
+- `iat` (issued at): date of the generation of the token in Epoch seconds
+- `client_id`: an identifier for the logged user requesting the resource
+
+### Example CURL requests:
+
+- `$USR`: login that has been transmitted to communicate with the token server
+- `$PWD`: password that has been transmitted to communicate with the token server
+- `$DATE`: Epoch date in seconds, e.g. now+1200 to get a token that is valid for 20mn
+- `$SUB`: The value set for the robot/harvester in the file `rudi_proxy.ini` for `token_server_subject` and associated to a private key (e.g. `rudi_token`)
+- `$MTD`: HTTP method for the request to the API (`GET` | `POST` | `PUT` | `DELETE`)
+- `$URL`: URL of the request to the API (e.g.: `/api/admin/resources``)
+- `$CID`: client ID, the way you wish identify the sender of the request (e.g. 'PostmanRobot')
+- `$NODE`: URL of the producer node (e.g.: `https://rm.fenix.rudi-univ-rennes1.fr`)
+
+```sh
+# Create a token
+JWT=`curl -X POST --user $USR:$PWD -H 'Content-Type: application/json' -d "{\"exp\":$DATE,\"sub\":\"$SUB\",\"req_mtd\":\"$MTD\",\"req_url\":\"$URL\",\"client_id\":\"$CID\"}" $NODE/crypto/jwt/forge`
+
+# Check a token
+curl -X POST --user $USR:$PWD -H 'Content-Type: application/json' -d "\"$JWT\"" $NODE/crypto/jwt/check
+
+# Send the request to the API
 curl -X $MTD -H "Authorization: Bearer $JWT" ${NODE}${URL}
 ```
 
-## 📁 Processus de validation
+---
 
-### Fichiers média
-1. Upload vers le module Media
-2. Statut mis à jour selon le résultat
-   - `available_formats[i].file_storage_status` → `available`
-   - Mise à jour de `available_formats[i].file_status_update`
-3. Vérification périodique de disponibilité
+## Commit process
 
-### Métadonnées
-1. Envoi au portail si tous les médias sont disponibles
-2. Statut `pending` si succès
-3. Statut `unavailable` si échec
+Two commit processes types are ongoing parallely:
 
-## 🧪 Tests
+1. MediaFile
+   Each MediaFile get uploaded to the Media module: the upload status determines if the MediaFile status is set to commited.
+   More technically speaking, in case of success
 
-Les fichiers de test sont disponibles dans `tests/`:
-- Environnements Postman (`tests/env-rudi-*.postman_environment.json`)
-- Documentation détaillée dans `tests/Tests_documentation.md`
-- Pour les tests, remplacer `cryptoJwtUrl` par l'adresse valide du module client/crypto
+   - `available_formats[i].file_storage_status` is set to `available`
+   - `available_formats[i].file_status_update` is updated
 
-## 👥 Contact
+2. Metadata
+   If all the media were set as available, the metadata is sent to the portal and its status set to `pending`.
+   If at least one upload fails to be committed, the metadata is set as `unavailable` and the user has to re-upload
+   the file for the status to be updated anew.
 
-Pour toute question : community@rudi-univ-rennes1.fr
+## Verification process
 
-## 📚 Documentation
+Each MediaFile will be periodically checked.
 
-- [API Publique](https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER/)
-- [API Interne](https://app.swaggerhub.com/apis/OlivierMartineau/RudiProducer-InternalAPI)
+If the file is found, the field `available_formats[i].media_dates.verified` is updated.
+If `available_formats[i].storage_status` was set to `nonexistant` or `missing`, it is set to `available` and `available_formats[i].status_update` date is updated.
 
-## Contribuer à Rudi
+If the file is not found and `available_formats[i].storage_status === 'available'`, then `available_formats[i].storage_status` is set to `missing` and `available_formats[i].status_update` date is updated.
 
-Nous accueillons et encourageons les contributions de la communauté. Voici comment vous pouvez participer :
-- 🛣️ [Feuille de route](https://github.com/orgs/rudi-platform/projects/2)
-- 🐞 [Signaler un bug du portail](https://github.com/rudi-platform/rudi-node-catalog/issues)
-- ✨ [Contribuer](https://github.com/rudi-platform/.github/blob/main/CONTRIBUTING.md)
-- 🗣️ [Participer aux discussions](https://github.com/orgs/rudi-platform/discussions)
+---
+
+## Test files
+
+In `tests/env-rudi-*.postman_environment.json` the value for the key `cryptoJwtUrl` should be replaced with the valid address of the client/crypto module. See [Tests documentation.md](tests/Tests_documentation.md) for further details
+
+---
+
+## Installation
+
+The
