@@ -10,7 +10,7 @@ import { nanoid } from 'nanoid'
 // -------------------------------------------------------------------------------------------------
 import { RudiError } from '../../utils/errors.js'
 import { beautify, dateEpochMsToIso } from '../../utils/jsUtils.js'
-import { logD, logI, logT, logV, logW, sysInfo, sysOnError } from '../../utils/logging.js'
+import { logD, logT, logV, logW, sysInfo, sysOnError } from '../../utils/logging.js'
 
 // -------------------------------------------------------------------------------------------------
 // External constants
@@ -30,7 +30,7 @@ import { protectHeaderAuth, protectHeaderMethod, protectHeaderUrl } from '../../
 // -------------------------------------------------------------------------------------------------
 // Internal constants
 // -------------------------------------------------------------------------------------------------
-const ACTIVATE_LOG = true
+const ACTIVATE_LOG = false
 /**
  * This class makes it possible to add to the request received by node a context that will be
  * helpful to create syslog lines.
@@ -95,7 +95,7 @@ export const CallContext = class CallContext {
       const msg = `${authDetails ? beautify(authDetails) : ''}, ${
         opDetails ? beautify(opDetails) : ''
       }, ${rawDetails ? beautify(rawDetails) : ''}`
-      if (ACTIVATE_LOG) logT(mod, fun, msg)
+      // if (ACTIVATE_LOG) logT(mod, fun, msg)
 
       this[AUTH] = !authDetails ? {} : authDetails
       this[OP] = !opDetails ? {} : opDetails
@@ -276,7 +276,7 @@ export const CallContext = class CallContext {
   }
 
   logInfo = (ctxMod, ctxFun, msg) => {
-    logI(ctxMod, ctxFun, `${msg}: ${this.apiCallMsg}`)
+    // logI(ctxMod, ctxFun, `${msg}: ${this.apiCallMsg}`)
     sysInfo(`${msg}: ${this.reqDetailsMsg}`, '', this, ' ') //, `reqDetails: '${this.formatReqDetails()}'`
   }
 
@@ -289,7 +289,7 @@ export const CallContext = class CallContext {
       if (!this.getError()) this.addError(ctxMod, ctxFun, err)
       const rudiErr = this.getError()
       logV(mod, fun, 'rudiErr: ' + beautify(rudiErr))
-      const primeError = rudiErr.primeError || rudiErr
+      const primeError = rudiErr.primeError ?? rudiErr
 
       const errMsg = `Error ${rudiErr.statusCode} (${rudiErr.name}): ${rudiErr.message}`
       const errDetails =

@@ -90,6 +90,8 @@ export const URL_PREFIX_PRIVATE = '/admin'
 
 // This generic URL will be used to factorize the treatments on resources, organizations, contacts, etc.
 export const URL_PUB_METADATA = `${URL_PREFIX_PUBLIC}/${OBJ_METADATA}`
+export const URL_PUB_ORGA = `${URL_PREFIX_PUBLIC}/${OBJ_ORGANIZATIONS}`
+export const URL_PUB_CONTACT = `${URL_PREFIX_PUBLIC}/${OBJ_CONTACTS}`
 
 export const ACT_UUID_GEN = 'id_generation'
 export const ACT_INIT = 'init'
@@ -164,8 +166,6 @@ export const URL_PV_OBJECT_GENERIC = `${URL_PREFIX_PRIVATE}/:${PARAM_OBJECT}`
 export const URL_PV_THESAURUS_ACCESS = `${URL_PREFIX_PRIVATE}/${URL_SUFFIX_THESAURUS}`
 export const URL_PV_LICENCE_ACCESS = `${URL_PREFIX_PRIVATE}/${URL_LICENCE_SUFFIX}`
 export const URL_PV_LICENCE_CODES_ACCESS = `${URL_PREFIX_PRIVATE}/${URL_SUFFIX_LICENCE_CODES}`
-
-export const URL_PREFIX_CHECK = `${URL_PREFIX_PRIVATE}/${ACT_CHECK}`
 
 // -------------------------------------------------------------------------------------------------
 // Syslog places

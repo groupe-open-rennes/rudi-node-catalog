@@ -182,7 +182,6 @@ export const organizationRudiToDbFormat = async (rudiProducer, path, shouldCreat
 
       organizationDbId = newOrg[DB_ID]
     }
-    // logD(mod, fun, `${beautify(rudiProducer)} -> ${organizationDbId} `)
     return organizationDbId
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
@@ -274,7 +273,7 @@ export const mediaListRudiToDbFormat = async (rudiMediaList, shouldCreateIfNotFo
           // Set media storage_status to 'available'
           rudiMedia[API_FILE_STORAGE_STATUS] = MediaStorageStatus.Available
           // Set status_update date
-          rudiMedia[API_FILE_STATUS_UPDATE] = rudiMedia[API_FILE_STATUS_UPDATE] || nowISO()
+          rudiMedia[API_FILE_STATUS_UPDATE] = rudiMedia[API_FILE_STATUS_UPDATE] ?? nowISO()
         }
 
         if (!mediaDbId) {

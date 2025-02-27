@@ -100,7 +100,8 @@ export const logLine = (logLevel, srcMod, srcFun, msg, shouldAddLogEntry = true)
     // console.log(displayStr(srcMod, srcFun, msg))
     if (shouldAddLogEntry) addLogEntry(logLevel, srcMod, srcFun, msg)
     if (SHOULD_SYSLOG && msg) {
-      sysLog(logLevel, msg, logWhere(srcMod, srcFun))
+      if (`${srcMod}${srcFun}` === '') sysLog(logLevel, msg, logWhere(srcMod, srcFun))
+      else sysLog(logLevel, `[${logWhere(srcMod, srcFun)}] ${msg}`, logWhere(srcMod, srcFun))
     }
   } catch (e) {
     consoleErr(`logLevel=${logLevel}`, e)
@@ -136,7 +137,10 @@ const sysLog = (level, msg, location, context, cid, info) => {
     if (SHOULD_SYSLOG) {
       if (level == 'verbose') level = 'info'
       if (level == ERR_LEVEL_TRACE || !level) level = 'debug'
-      sysLogger[level](msg, location, context, cid || context?.id, info || context?.detailsStr)
+      let msg_str = `${msg}`
+      if (msg_str === '[Object]: Object' || msg_str === '[object Object]')
+        msg_str = JSON.stringify(msg)
+      sysLogger[level](msg_str, location, context, cid || context?.id, info || context?.detailsStr)
     } else return () => null
   } catch (err) {
     consoleErr(mod, 'sysLog', err)
@@ -197,32 +201,18 @@ export class FFLogger {
     this.level = level
   }
 
-  fatal(msg) {
-    return sysAlert(stringifyMsg(msg))
-  }
-  error(msg) {
-    return sysError(stringifyMsg(msg))
-  }
-  warn(msg) {
-    return sysWarn(stringifyMsg(msg))
-  }
-  info(msg) {
-    return sysInfo(stringifyMsg(msg))
-  }
-  debug(msg) {
-    return sysDebug(stringifyMsg(msg))
-  }
-  trace(msg) {
-    return sysTrace(
+  fatal = (msg) => sysAlert(stringifyMsg(msg))
+  error = (msg) => sysError(stringifyMsg(msg))
+  warn = (msg) => sysWarn(stringifyMsg(msg))
+  info = (msg) => sysInfo(stringifyMsg(msg))
+  debug = (msg) => sysDebug(stringifyMsg(msg))
+  trace = (msg) =>
+    sysTrace(
       typeof msg == 'string' ? msg : msg?.err ? `ERR ${msg.err.code} ${msg.err.message}` : `${msg}`
     )
-  }
-  log(msg) {
-    return sysLog(this.level, stringifyMsg(msg))
-  }
-  child() {
-    return new FFLogger()
-  }
+  log = (msg) => sysLog(this.level, stringifyMsg(msg))
+
+  child = () => new FFLogger()
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -235,7 +225,7 @@ export const sysOnError = (statusCode, errMsg, context, details) => {
     logT(mod, fun)
     logE(mod, fun, errMsg) //`Error ${err.statusCode} (${err.name}): ${err.message}`)
     const errCode = parseInt(statusCode)
-    let sysLogErr = isNaN(errCode) || errCode >= 500 ? sysCrit : sysError
+    let sysLogErr = (isNaN(errCode) ?? errCode >= 500) ? sysCrit : sysError
     sysLogErr(errMsg, '', context, details)
     //   `Error ${err.statusCode} (${err.name}): ${err.message}`,
     //   '',
@@ -273,9 +263,8 @@ export const logHttpAnswer = (loggedMod, loggedFun, httpAnswer) => {
 // -------------------------------------------------------------------------------------------------
 // Metadata
 // -------------------------------------------------------------------------------------------------
-export const logMetadata = (metadata) => {
-  return `${beautify(pick(metadata, [API_METADATA_ID, API_DATA_NAME_PROPERTY]))}`
-}
+export const logMetadata = (metadata) =>
+  `${beautify(pick(metadata, [API_METADATA_ID, API_DATA_NAME_PROPERTY]))}`
 
 // -------------------------------------------------------------------------------------------------
 // DB
@@ -296,7 +285,7 @@ export const addLogEntry = async (logLvl, loc_module, loc_function, msg) => {
     consoleErr(
       loc_module,
       `${loc_function} > ${fun}`,
-      `${logLvl} logging failed! msg: ${msg}, err: ${err}`
+      `${logLvl} log in db failed! msg: ${msg}, err: ${err}`
     )
     // throw err
   }

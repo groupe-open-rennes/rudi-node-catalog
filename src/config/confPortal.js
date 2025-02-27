@@ -36,7 +36,7 @@ export const NO_PORTAL_MSG = 'No portal connected'
 const INI_DIR = './0-ini'
 // - user conf path
 const portalConfUserFile = getCliEnvOpt(OPT_PORTAL_CONF)
-const PORTAL_CUSTOM_CONF_FILE = portalConfUserFile || `${INI_DIR}/portal_conf_custom.ini`
+const PORTAL_CUSTOM_CONF_FILE = portalConfUserFile ?? `${INI_DIR}/portal_conf_custom.ini`
 // - default conf path
 const PORTAL_DEFT_CONF_FILE = `${INI_DIR}/portal_conf_default.ini`
 
@@ -77,16 +77,17 @@ const API_PORTAL_URL = getPortalUserConf('portal_url')
 export const isPortalConnectionDisabled = () => !API_PORTAL_URL?.startsWith('http')
 
 // ----- Auth
-const AUTH_URL = getPortalUserConf('auth_url') || API_PORTAL_URL
-const AUTH_GET = getPortalConf('auth_get')
-const AUTH_CHK = getPortalConf('auth_chk')
-const JWT_PUB_KEY_URL = getPortalConf('auth_pub')
-const CRYPT_PUB_KEY_URL = getPortalConf('encrypt_pub')
+const getAuthUrl = (...url) => pathJoin(API_PORTAL_URL, ...url)
 
-export const getAuthUrl = () => pathJoin(AUTH_URL, AUTH_GET)
-export const getCheckAuthUrl = () => pathJoin(AUTH_URL, AUTH_CHK)
-export const getPortalJwtPubKeyUrl = () => pathJoin(AUTH_URL, JWT_PUB_KEY_URL)
-export const getPortalCryptPubUrl = () => pathJoin(AUTH_URL, CRYPT_PUB_KEY_URL)
+const AUTH_GET = getAuthUrl(getPortalConf('oauth_get'))
+const AUTH_CHK = getAuthUrl(getPortalConf('oauth_chk'))
+const JWT_PUB_KEY_URL = getAuthUrl(getPortalConf('oauth_pub'))
+const CRYPT_PUB_KEY_URL = getAuthUrl(getPortalConf('encrypt_pub'))
+
+export const getUrlPortalAuthGet = () => AUTH_GET
+export const getUrlPortalAuthCheck = () => AUTH_CHK
+export const getUrlPortalAuthPub = () => JWT_PUB_KEY_URL
+export const getUrlPortalEncryptPub = () => CRYPT_PUB_KEY_URL
 
 // ----- Creds
 const uname = getPortalUserConf('login')
@@ -95,33 +96,36 @@ const isPwdB64 = getPortalUserConf('is_pwd_b64')
 const pwdEncoding = isPwdB64 ? 'base64' : 'utf-8'
 
 const BAUTH = createBasicAuth(uname, passw, 'utf-8', pwdEncoding)
-const BAUTH_HEADERS_BASIC = {
-  headers: { 'User-Agent': USER_AGENT, Authorization: `Basic ${BAUTH}` },
-}
+export const getPortalAuthHeaders = (additionalHeaders) => ({
+  headers: { 'User-Agent': USER_AGENT, Authorization: `Basic ${BAUTH}`, ...additionalHeaders },
+})
 const PORTAL_TOKEN_REQ_BODY =
-  `grant_type=password&scope=read&username=${encodeURIComponent(uname)}&` +
+  `grant_type=client_credentials&username=${encodeURIComponent(uname)}&` +
   `password=${encodeURIComponent(isPwdB64 ? decodeBase64url(passw) : passw)}`
 
 // consoleLog(mod, 'readPortalConf',`READ_PASSW: ${READ_PASSW}` )
 
-export const getCredentials = (headersOnly) =>
-  headersOnly ? BAUTH_HEADERS_BASIC : [BAUTH_HEADERS_BASIC, PORTAL_TOKEN_REQ_BODY]
+export const getPortalAuthCredentials = () => [
+  getPortalAuthHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+  PORTAL_TOKEN_REQ_BODY,
+]
 
 // ----- API
-export const getPortalBaseUrl = () => API_PORTAL_URL || NO_PORTAL_MSG
+export const getPortalBaseUrl = () => API_PORTAL_URL ?? NO_PORTAL_MSG
 
-const API_GET_URL = getPortalConf('get_url')
-const API_SEND_URL = getPortalConf('put_url')
+const API_GET_META_URL = getPortalConf('get_meta_url')
+const API_SEND_META_URL = getPortalConf('put_meta_url')
+const API_SEND_ORG_URL = getPortalConf('put_org_url')
 
 export const getPortalMetaUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   const reqUrl = !id
-    ? pathJoin(API_PORTAL_URL, API_GET_URL.replace('/{{id}}', ''))
-    : pathJoin(API_PORTAL_URL, API_GET_URL.replace('{{id}}', id))
+    ? pathJoin(API_PORTAL_URL, API_GET_META_URL.replace('/{{id}}', ''))
+    : pathJoin(API_PORTAL_URL, API_GET_META_URL.replace('{{id}}', id))
   const options = additionalParameters ? `?${additionalParameters}` : ''
   return `${reqUrl}${options}`
 }
-export const postPortalMetaUrl = (id) => pathJoin(API_PORTAL_URL, API_SEND_URL, id)
+export const postPortalMetaUrl = (id) => pathJoin(API_PORTAL_URL, API_SEND_META_URL, id)
 
 const apiGetUrlElements = getPortalMetaUrl().split('/')
 const API_GET_PROTOCOL = apiGetUrlElements[0].replace(/:/, '')
@@ -162,7 +166,6 @@ if (isPortalConnectionDisabled()) {
   logD(mod, '', NO_PORTAL_MSG)
 } else {
   logD(mod, '', `Portal - Data: '${API_PORTAL_URL}'`)
-  logD(mod, '', `Portal - Auth: '${AUTH_URL}'`)
 }
 
 // -------------------------------------------------------------------------------------------------

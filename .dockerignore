@@ -1,7 +1,7 @@
 # Config
 **/custom.ini
 **/*custom.ini
-**/.env*
+**/.env
 
 # Generated
 *-lock.json
@@ -12,13 +12,11 @@ dump
 
 # Logs
 **/logs
-**/*log
 
 # Tests
 **/actions
 **/jest
 tests/doc
-**bak
 
 # Zip
 **/*.zip
@@ -40,8 +38,7 @@ z_*
 
 # Dev
 .vscode
-z_notes
-wip
 
-.dockerignore
+# Docker
 Dockerfile
+

@@ -17,9 +17,11 @@ import {
   ACT_SEARCH,
   ACT_SEND,
   ACT_UUID_GEN,
+  OBJ_CONTACTS,
   OBJ_LOGS,
   OBJ_MEDIA,
   OBJ_METADATA,
+  OBJ_ORGANIZATIONS,
   OBJ_PUB_KEYS,
   OBJ_REPORTS,
   PARAM_ID,
@@ -41,7 +43,6 @@ import {
   URL_SUFFIX_NODE_VERSION,
   URL_SUFFIX_PORTAL,
   URL_SUFFIX_THESAURUS,
-  URL_SUFFIX_TOKEN_CHECK,
   URL_SUFFIX_TOKEN_GET,
 } from '../config/constApi.js'
 
@@ -131,8 +132,8 @@ import {
 import { getPortalBaseUrl } from '../config/confPortal.js'
 import { getCatalog, getPrivatePath, getPublicPath, getPublicUrl } from '../config/confSystem.js'
 import {
-  checkStoredToken,
   deleteMetadata,
+  exposedCheckPortalToken,
   exposedGetPortalToken,
   getMetadata,
   sendMetadata,
@@ -143,6 +144,7 @@ import {
   getPortalMetadataFields,
 } from '../controllers/stateController.js'
 import { test } from '../controllers/testController.js'
+import { getAllContacts, getAllOrganizations } from '../db/dbQueries.js'
 
 // -------------------------------------------------------------------------------------------------
 // Free routes (no authentification required)
@@ -181,7 +183,7 @@ export const publicRoutes = [
     },
   },
   {
-    description: `Redirection: GET /api/v1 -> GET ${getPublicPath(OBJ_METADATA)}`,
+    description: `Redirection: GET ${getPublicPath()} -> GET ${getPublicPath(OBJ_METADATA)}`,
     method: 'GET',
     url: getPublicPath(),
     config: { [ROUTE_NAME]: 'redirect_get_data' },
@@ -191,7 +193,7 @@ export const publicRoutes = [
     },
   },
   {
-    description: `Redirection: GET /resources/* -> GET ${getPublicPath(OBJ_METADATA)}/*`,
+    description: `Redirection: GET /${OBJ_METADATA}/* -> GET ${getPublicPath(OBJ_METADATA)}/*`,
     method: 'GET',
     url: `/${OBJ_METADATA}/*`,
     config: { [ROUTE_NAME]: 'redirect_get_data' },
@@ -227,6 +229,20 @@ export const publicRoutes = [
     method: 'GET',
     url: getPublicPath(OBJ_METADATA),
     handler: getMetadataListAndCount,
+    config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
+  },
+  {
+    description: 'Access all organizations created on the RUDI producer node',
+    method: 'GET',
+    url: getPublicPath(OBJ_ORGANIZATIONS),
+    handler: getAllOrganizations,
+    config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
+  },
+  {
+    description: 'Access all contacts created on the RUDI producer node',
+    method: 'GET',
+    url: getPublicPath(OBJ_CONTACTS),
+    handler: getAllContacts,
     config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
   },
   /*
@@ -292,7 +308,7 @@ if (getCatalog() !== '/api') {
   // Deal with the legacy
   for (const method of ['DELETE', 'POST', 'PUT', 'GET'])
     publicRoutes.unshift({
-      description: `Redirection: ${method} /api -> GET ${getPublicPath()}`,
+      description: `Redirection: ${method} /api -> ${method} ${getCatalog()}`,
       method,
       url: '/api/*',
       config: { [ROUTE_NAME]: `redirect_${method.toLowerCase()}_data` },
@@ -363,6 +379,13 @@ export const portalRoutes = [
  * Routes that don't need a JWT check (to be accessed by internal programs)
  */
 export const unrestrictedPrivateRoutes = [
+  {
+    description: 'Get current API version',
+    method: 'GET',
+    url: getPrivatePath('version'),
+    handler: getApiVersion,
+    config: { [ROUTE_NAME]: 'dev_get_api_version' },
+  },
   /*
    * @oas [get] /api/admin/hash
    * scope: public
@@ -738,7 +761,6 @@ export const devRoutes = [
   // -----------------------------------------------------------------------------------------------
   // Portal token
   // -----------------------------------------------------------------------------------------------
-  // Get a new token from the Portal
   {
     description: 'Get a new token from the Portal',
     method: 'GET',
@@ -746,13 +768,12 @@ export const devRoutes = [
     handler: exposedGetPortalToken,
     config: { [ROUTE_NAME]: 'dev_get_portal_token' },
   },
-  // Get a token checked by the Portal
   {
-    description: 'Get a token checked by the Portal',
+    description: 'Get a portal token checked',
     method: 'GET',
-    url: getPrivatePath(URL_SUFFIX_PORTAL, URL_SUFFIX_TOKEN_GET, URL_SUFFIX_TOKEN_CHECK),
-    handler: checkStoredToken,
-    config: { [ROUTE_NAME]: 'dev_check_stored_token' },
+    url: getPrivatePath(URL_SUFFIX_PORTAL, URL_SUFFIX_TOKEN_GET, ACT_CHECK),
+    handler: exposedCheckPortalToken,
+    config: { [ROUTE_NAME]: 'dev_check_portal_token' },
   },
 
   // -----------------------------------------------------------------------------------------------

@@ -280,6 +280,8 @@ export const initFFLogger = () => {
 
 // export const sysLogger = winston.createLogger(syslogOpts)
 function getRudiLoggerOptions() {
+  const facility = SYSLOG_FACILITY
+  const port = SYSLOG_PORT
   let transport
   let path = SYSLOG_HOST
   switch (SYSLOG_PROTOCOL) {
@@ -297,16 +299,15 @@ function getRudiLoggerOptions() {
       transport = Transport.Udp
   }
   const rudiLoggerOpts = {
-    log_server: { path, port: SYSLOG_PORT, facility: SYSLOG_FACILITY, transport },
+    log_server: { path, port, facility, transport },
     log_local: {
       directory: resolve(SYSLOG_DIR),
-      prefix: 'rudiProdApi',
+      prefix: 'rudiCatalog',
       console: !!SHOULD_SYSLOG_IN_CONSOLE,
       consoleData: !!SHOULD_SYSLOG_IN_CONSOLE,
       level: SYSLOG_LVL,
     },
   }
-
   return rudiLoggerOpts
 }
 

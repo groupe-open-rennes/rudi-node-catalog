@@ -24,6 +24,7 @@ import { SHOULD_SYSLOG, shouldShowErrorPile, shouldShowRoutes } from '../config/
 import { JWT_USER, isPortalConnectionDisabled } from '../config/confPortal.js'
 
 import {
+  logD,
   logE,
   logI,
   logLine,
@@ -50,7 +51,7 @@ import {
 } from './routes.js'
 
 import { checkPortalTokenInHeader } from '../controllers/portalController.js'
-import { checkRudiProdPermission } from '../controllers/tokenController.js'
+import { checkRequesterPermission } from '../controllers/tokenController.js'
 import { getUrlMaxLength } from '../utils/protection.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -203,7 +204,7 @@ catalogApp.addHook('onRequest', (req, res, next) => {
   const fun = 'onRequest'
   try {
     const context = new CallContext()
-    logV(mod, fun, `----- Rcv req #${context.id} from ${createIpsMsg(req)} -----vvv---`)
+    logV('', '', `----- Rcv req #${context.id} from ${createIpsMsg(req)} -----vvv---`)
     // logV(mod, fun, req.url)
     const now = timeEpochMs()
     context.setIpsFromRequest(req)
@@ -240,7 +241,7 @@ catalogApp.addHook('onSend', (request, reply, payload, next) => {
       context.duration = now - context.timestamp
       context.statusCode = reply.statusCode
       if (!reply.isError) context.logInfo(mod, fun, 'API reply')
-      logV(mod, fun, `----- Send reply #${context.id} (${context.duration} ms) -----^^^--`)
+      logV('', '', `----- Send reply #${context.id} (${context.duration} ms) -----^^^--`)
     }
     next()
   } catch (err) {
@@ -268,7 +269,7 @@ async function onPublicRoute(req, reply) {
 
     if (isPortalConnectionDisabled()) {
       try {
-        const { subject, clientId } = await checkRudiProdPermission(req, true)
+        const { subject, clientId } = await checkRequesterPermission(req, true)
         context.clientApp = subject
         context.reqUser = clientId
       } catch {
@@ -280,12 +281,12 @@ async function onPublicRoute(req, reply) {
         // Checking the token, if it exists, to retrieve the user info
         const portalJwt = await checkPortalTokenInHeader(req, true)
         const jwtPayload = portalJwt[1]
-        // logD(mod, fun, `Payload: ${beautify(jwtPayload)}`)
-        context.clientApp = jwtPayload[JWT_SUB] || 'RUDI Portal'
-        context.reqUser = jwtPayload[JWT_USER] || jwtPayload[JWT_CLIENT]
+        logD(mod, fun, `Payload: ${beautify(jwtPayload)}`)
+        context.clientApp = jwtPayload[JWT_SUB] ?? 'RUDI Portal'
+        context.reqUser = jwtPayload[JWT_USER] ?? jwtPayload[JWT_CLIENT]
       } catch {
         try {
-          const { subject, clientId } = await checkRudiProdPermission(req, true)
+          const { subject, clientId } = await checkRequesterPermission(req, true)
           context.clientApp = subject
           context.reqUser = clientId
         } catch {
@@ -315,11 +316,11 @@ async function onPortalRoute(req, reply) {
     // If incoming request has no token, raise an error
     const portalJwt = await checkPortalTokenInHeader(req, false)
     const jwtPayload = portalJwt[1]
-    // logD(mod, fun, `Payload: ${beautify(jwtPayload)}`)
+    logD(mod, fun, `Payload: ${beautify(jwtPayload)}`)
 
     const context = CallContext.getCallContextFromReq(req)
-    context.clientApp = jwtPayload[JWT_SUB] || 'RUDI Portal'
-    context.reqUser = jwtPayload[JWT_USER] || jwtPayload[JWT_CLIENT]
+    context.clientApp = jwtPayload[JWT_SUB] ?? 'RUDI Portal'
+    context.reqUser = jwtPayload[JWT_USER] ?? jwtPayload[JWT_CLIENT]
 
     context.logInfo('route', fun, 'API call')
     return true
@@ -338,7 +339,7 @@ async function onPortalRoute(req, reply) {
 async function onPrivateRoute(req, reply) {
   const fun = 'onPrivateRoute'
   try {
-    logT(mod, fun, `${req.method} ${req.url} `)
+    // logT(mod, fun, `${req.method} ${req.url} `)
     if (!shouldControlPrivateRequests()) {
       logW(
         mod,
@@ -348,7 +349,7 @@ async function onPrivateRoute(req, reply) {
       return true
     }
 
-    const { subject, clientId } = await checkRudiProdPermission(req, false)
+    const { subject, clientId } = await checkRequesterPermission(req, false)
 
     const context = CallContext.getCallContextFromReq(req)
     context.clientApp = subject
@@ -376,7 +377,7 @@ async function onUnrestrictedPrivateRoute(req, reply) {
     const context = CallContext.getCallContextFromReq(req)
 
     try {
-      const { subject, clientId } = await checkRudiProdPermission(req, true)
+      const { subject, clientId } = await checkRequesterPermission(req, true)
       context.clientApp = subject
       context.reqUser = clientId
     } catch {
@@ -459,7 +460,7 @@ export const getRestApi = (req) => {
     Object.keys(ROUTES).forEach((group) => {
       ROUTES[group].forEach((route) => {
         const { method, url } = route
-        const description = route.description || 'No description provided'
+        const description = route.description ?? 'No description provided'
         routeList.push([group, method, url, description])
       })
     })
@@ -473,7 +474,7 @@ export const getRestApi = (req) => {
 
       ROUTES[group].forEach((route) => {
         const { method, url } = route
-        const description = route.description || 'No description provided'
+        const description = route.description ?? 'No description provided'
         routeList[group].push({ method, url, description })
       })
     })
@@ -488,7 +489,7 @@ export const generateRestApiMarkdown = () => {
   Object.keys(ROUTES).forEach((routeGroup) => {
     ROUTES[routeGroup].forEach((route) => {
       const { method, url } = route
-      const description = route.description || 'No description provided'
+      const description = route.description ?? 'No description provided'
       markdownRoutes.push([routeGroup, method, url, description])
     })
     markdownRoutes.push([' ', ' ', ' ', ' '])
