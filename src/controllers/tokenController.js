@@ -9,6 +9,7 @@ import {
   tokenStringToJwtObject,
   verifyToken,
 } from '@aqmo.org/jwt-lib'
+import { readFileSync } from 'fs'
 
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
@@ -148,15 +149,18 @@ const CACHED_PUB_KEYS = {}
 const getPubKey = (subject) => {
   const fun = 'getPubKey'
   try {
-    const subjProfile = getProfile(subject)
-    // logD(mod, fun + ' profile:', beautify(subjProfile))
-    const keyFile = subjProfile[PUB_KEY]
-    if (!keyFile)
-      throw new ForbiddenError(`Wrong configuration, public key path not found for '${subject}'`)
-
-    if (!CACHED_PUB_KEYS[subject]) CACHED_PUB_KEYS[subject] = readPublicKeyFile(keyFile)
+    if (!CACHED_PUB_KEYS[subject]) {
+      const subjProfile = getProfile(subject)
+      // logD(mod, fun + ' profile:', beautify(subjProfile))
+      const keyFile = subjProfile[PUB_KEY]
+      if (!keyFile)
+        throw new ForbiddenError(`Wrong configuration, public key path not found for '${subject}'`)
+      CACHED_PUB_KEYS[subject] = readPublicKeyFile(keyFile)
+      logD(mod, fun, `Key found for '${subject}'`)
+    }
     return CACHED_PUB_KEYS[subject]
   } catch (err) {
+    logW(mod, fun, err)
     throw RudiError.treatError(mod, fun, err)
   }
 }
@@ -170,12 +174,16 @@ export const verifyRudiCatalogToken = async (token, reqMethod, reqUrl) => {
 
     const subject = accessProperty(payload, JWT_SUB)
     const pubKey = getPubKey(subject)
-    // logV(mod, fun + ' pubKey:', pubKey)
     try {
       verifyToken(pubKey, token)
     } catch (e) {
-      logE(mod, fun, e)
-      logE(mod, fun, token)
+      logE(mod, fun, `error: ${e}`)
+      logD(mod, fun, `token: ${token}`)
+      logD(mod, fun, `subject: '${subject}'`)
+      const keyFile = getProfile(subject)[PUB_KEY]
+      const pubStr = readFileSync(keyFile)
+      logD(mod, fun, `key file: '${keyFile}'`)
+      logE(mod, fun, `content: '${pubStr}'`)
       throw new ForbiddenError(beautify(e.message || e))
     }
     logT(mod, fun, 'Token in request headers is OK')
@@ -195,8 +203,9 @@ export const verifyRudiCatalogToken = async (token, reqMethod, reqUrl) => {
     const clientId = payload[JWT_CLIENT]
 
     return { subject, clientId }
-  } catch {
+  } catch (e) {
     logW(mod, fun, `The JWT could not be validated: ${token}`)
+    logW(mod, fun, e)
     const error = new ForbiddenError(`The JWT could not be validated`)
     throw RudiError.treatError(mod, fun, error)
   }
