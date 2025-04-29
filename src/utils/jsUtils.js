@@ -197,6 +197,8 @@ export const toISOLocale = (date) => {
 export const timeEpochMs = (delayMs = 0) => new Date().getTime() + delayMs
 export const timeEpochS = (delayS = 0) => Math.floor(new Date().getTime() / 1000) + delayS
 
+export const sleepMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export const dateToIso = (date) => {
   const fun = 'dateToIso'
   try {
@@ -413,8 +415,15 @@ export const logWhere = (srcMod, srcFun) =>
 
 export const displayStr = (srcMod, srcFun, msg = '<-') => `[ ${logWhere(srcMod, srcFun)} ] ${msg}`
 
-export const consoleLog = (srcMod, srcFun, msg = '<-') =>
-  console.log('D', nowLocaleFormatted(), displayStr(srcMod, srcFun, msg))
+const CONSOLE_LOGS = []
+export const getConsoleLogs = () => CONSOLE_LOGS
 
-export const consoleErr = (srcMod, srcFun, msg = 'No error message :(') =>
+export const consoleLog = (srcMod, srcFun, msg = '<-') => {
+  CONSOLE_LOGS.push(displayStr(srcMod, srcFun, msg))
+  console.log('D', nowLocaleFormatted(), displayStr(srcMod, srcFun, msg))
+}
+
+export const consoleErr = (srcMod, srcFun, msg = 'No error message :(') => {
+  CONSOLE_LOGS.push(displayStr(srcMod, srcFun, `ERR ${msg[TRACE] || msg}`))
   console.error('E', nowLocaleFormatted(), displayStr(srcMod, srcFun, msg[TRACE] || msg))
+}

@@ -10,6 +10,7 @@ import { parseStringPromise as xml2jsonParser } from 'xml2js'
 // -------------------------------------------------------------------------------------------------
 import {
   API_ACCESS_CONDITION,
+  API_COLLECTION_TAG,
   API_DATA_CONTACTS_PROPERTY,
   API_DATA_DATES_PROPERTY,
   API_DATA_DESCRIPTION_PROPERTY,
@@ -24,19 +25,13 @@ import {
   API_LICENCE,
   API_LICENCE_LABEL,
   API_LICENCE_TYPE,
-  API_MEDIA_CAPTION,
-  API_MEDIA_CONNECTOR,
-  API_MEDIA_ID,
-  API_MEDIA_NAME,
   API_MEDIA_PROPERTY,
-  API_MEDIA_TYPE,
   API_METADATA_ID,
   API_METADATA_LOCAL_ID,
   API_METAINFO_CONTACTS_PROPERTY,
   API_METAINFO_PROPERTY,
   API_METAINFO_SOURCE_PROPERTY,
   API_METAINFO_VERSION_PROPERTY,
-  API_PUB_URL,
   API_STORAGE_STATUS,
   API_THEME_PROPERTY,
   DICT_LANG,
@@ -56,7 +51,6 @@ import {
 import { API_VERSION, OBJ_METADATA } from '../../config/constApi.js'
 import { getLicenceLabels } from '../../controllers/licenceController.js'
 import { getObject } from '../../db/dbQueries.js'
-import { MediaTypes } from '../../definitions/models/Media.js'
 import { get as getLanguages } from '../../definitions/thesaurus/Languages.js'
 import { StorageStatus } from '../../definitions/thesaurus/StorageStatus.js'
 import { BadRequestError, RudiError } from '../../utils/errors.js'
@@ -74,9 +68,10 @@ import {
   getPath,
   getXmlParam,
   translateStraightFromPath,
+  translateStraightFromXmlParam,
 } from './genericTranslationFunctions.js'
 import { GmdXmlToRudiGeoTranslator } from './geographyTranslator.js'
-import { GmdXmlToRudiMediaTranslator, findMediaIdWithURL } from './mediaTranslator.js'
+import { GmdXmlToRudiMediaTranslator } from './mediaTranslator.js'
 import { GmdXmlToRudiOrgaTranslator } from './organizationTranslator.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -260,7 +255,7 @@ const translateContacts = async (inputObject, path, args) => {
  * @param {*} args
  * @returns
  */
-const translateAvailableFormats = async (inputObject, path, args) => {
+const translateAvailableFormats = async (inputObject, path) => {
   const fun = 'translateAvailableFormats'
 
   let result = []
@@ -268,11 +263,7 @@ const translateAvailableFormats = async (inputObject, path, args) => {
     const mediaList = getElementWithPath(inputObject, path)
 
     await Promise.all(
-      mediaList.map((media) =>
-        translateOneMedia(media).then((value) => {
-          result.push(value)
-        })
-      )
+      mediaList.map((media) => translateOneMedia(media).then((value) => result.push(value)))
     )
     if (result.length === 0) {
       throw new BadRequestError(
@@ -282,20 +273,18 @@ const translateAvailableFormats = async (inputObject, path, args) => {
       )
     }
 
-    const mediaURLOldMetadata = getFirstElementWithPath(inputObject, args.pathToSourceMetadata)
-    const mediaId = await findMediaIdWithURL(mediaURLOldMetadata)
-    let customMediaService = {
-      [API_MEDIA_ID]: mediaId,
-      [API_MEDIA_TYPE]: MediaTypes.Service,
-      [API_MEDIA_NAME]: 'Link to source metadata',
-      [API_MEDIA_CAPTION]:
-        'Link to the metadata that was translated in RUDI format. Contains more informations.',
-      [API_MEDIA_CONNECTOR]: {
-        [API_PUB_URL]: mediaURLOldMetadata,
-      },
-    }
-
-    result.push(customMediaService)
+    // Deprecated : used to keep track of source metadata, replace by metadata_source field.
+    // const mediaURLOldMetadata = getFirstElementWithPath(inputObject, args.pathToSourceMetadata)
+    // const mediaId = await findMediaIdWithURL(mediaURLOldMetadata)
+    // let customMediaService = {
+    //   [API_MEDIA_ID]: mediaId,
+    //   [API_MEDIA_TYPE]: MediaTypes.Service,
+    //   [API_MEDIA_NAME]: 'Link to source metadata',
+    //   [API_MEDIA_CAPTION]:
+    //     'Link to the metadata that was translated in RUDI format. Contains more informations.',
+    //   [API_MEDIA_CONNECTOR]: { [API_PUB_URL]: mediaURLOldMetadata },
+    // }
+    // result.push(customMediaService)
     return result
   } catch (e) {
     throw RudiError.treatError(mod, fun, e)
@@ -312,7 +301,7 @@ const translateAvailableFormats = async (inputObject, path, args) => {
 
 const translateDataDates = (inputObject, path, args) => {
   const fun = 'translateDataDates'
-  let result = {}
+  const result = {}
   try {
     const argsCreated = getArgs(args, API_DATES_CREATED)
     const argsEdited = getArgs(args, API_DATES_EDITED)
@@ -320,10 +309,10 @@ const translateDataDates = (inputObject, path, args) => {
     const pathEdited = getPath(args, API_DATES_EDITED)
     const datesList = getElementWithPath(inputObject, path)
     for (const date of datesList) {
-      let paramValueCreated = arrayCheck(
+      const paramValueCreated = arrayCheck(
         findXmlParam(date, argsCreated.relativePathCondition, argsCreated.paramCondition)
       )
-      let paramValueEdited = arrayCheck(
+      const paramValueEdited = arrayCheck(
         findXmlParam(date, argsEdited.relativePathCondition, argsEdited.paramCondition)
       )
 
@@ -623,6 +612,13 @@ export const GmdXmlToRudiMetadataTranslator = new ObjectTranslator(
       true
     ),
     new FieldTranslator(API_STORAGE_STATUS, () => StorageStatus.Online, true),
+    new FieldTranslator(
+      API_COLLECTION_TAG,
+      translateStraightFromXmlParam,
+      false,
+      getPath(PATHS_GMD_TO_RUDI, API_COLLECTION_TAG),
+      getArgs(PATHS_GMD_TO_RUDI, API_COLLECTION_TAG)
+    ),
   ],
   xml2jsonParser
 )
