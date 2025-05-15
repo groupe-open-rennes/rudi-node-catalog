@@ -191,6 +191,7 @@ async function newObject(objectType, objectData) {
     throw RudiError.treatError(mod, fun, err)
   }
 }
+
 async function newRudiObject(Model, objectData) {
   const fun = 'newRudiObject'
   try {
@@ -669,24 +670,27 @@ async function upsertSingleObject(inputObject, objectType, objectStandard, objec
 
   let rudiObject
   try {
-    if (objectFormat === DEFAULT_OBJECT_FORMAT && objectStandard === DEFAULT_OBJECT_STANDARD) {
-      rudiObject = inputObject
-      logT(
-        mod,
-        fun,
-        `Standard ${objectFormat.toUpperCase()} ${objectStandard.toUpperCase()} object`
-      )
-    } else {
-      logT(mod, fun, `Translation needed for ${objectFormat} ${objectStandard} object`)
-      const objectTranslator = getTranslator(objectType, objectStandard, objectFormat)
-      if (!objectTranslator) {
-        throw new NotImplementedError(
-          `Object of type ${objectType}, at standard ${objectStandard} and format ${objectFormat} can not yet be uploaded.`
+    // Désactive la modification des objets de type Organisation
+    if (OBJ_ORGANIZATIONS !== objectType) {
+      if (objectFormat === DEFAULT_OBJECT_FORMAT && objectStandard === DEFAULT_OBJECT_STANDARD) {
+        rudiObject = inputObject
+        logT(
+          mod,
+          fun,
+          `Standard ${objectFormat.toUpperCase()} ${objectStandard.toUpperCase()} object`
         )
+      } else {
+        logT(mod, fun, `Translation needed for ${objectFormat} ${objectStandard} object`)
+        const objectTranslator = getTranslator(objectType, objectStandard, objectFormat)
+        if (!objectTranslator) {
+          throw new NotImplementedError(
+            `Object of type ${objectType}, at standard ${objectStandard} and format ${objectFormat} can not yet be uploaded.`
+          )
+        }
+        rudiObject = await objectTranslator.translateInputObject(inputObject, true)
       }
-      rudiObject = await objectTranslator.translateInputObject(inputObject, true)
+      return await upsertSingleRudiObject(rudiObject, objectType, context)
     }
-    return await upsertSingleRudiObject(rudiObject, objectType, context)
   } catch (e) {
     throw RudiError.treatError(mod, fun, e)
   }
