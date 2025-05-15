@@ -143,6 +143,7 @@ import {
   exposedCheckPortalToken,
   exposedGetPortalToken,
   getMetadata,
+  updateOrganizationFromPortal,
   sendAllMetadataToPortal,
   sendMetadata,
 } from '../controllers/portalController.js'
@@ -916,6 +917,13 @@ export const devRoutes = [
     url: getPrivatePath(ACT_CHECK, URL_SUFFIX_PORTAL, 'ids'),
     handler: getPortalMetadataFields,
     config: { [ROUTE_NAME]: 'prv_check_portal_metadata_ids' },
+  },
+  {
+    description: 'Get organization from the Portal',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: updateOrganizationFromPortal,
+    config: { [ROUTE_NAME]: 'get_portal_organization' },
   },
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
