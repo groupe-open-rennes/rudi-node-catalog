@@ -4,6 +4,7 @@ const mod = 'orgSch'
 // -------------------------------------------------------------------------------------------------
 import _ from 'lodash'
 import mongoose from 'mongoose'
+
 const { omit } = _
 
 // -------------------------------------------------------------------------------------------------
@@ -17,6 +18,7 @@ import {
   API_ORGANIZATION_ID,
   API_ORGANIZATION_NAME,
   API_ORGANIZATION_SUMMARY,
+  API_ORGANIZATION_VALIDATION_STATUS,
   DB_PUBLISHED_AT,
   FIELDS_TO_SKIP,
 } from '../../db/dbFields.js'
@@ -60,6 +62,12 @@ const OrganizationSchema = new mongoose.Schema(
 
     /** Tag for identifying a collection of resources */
     [API_COLLECTION_TAG]: String,
+
+    /** Status of the organization on portal */
+    [API_ORGANIZATION_VALIDATION_STATUS]: {
+      type: String,
+      enum: ['DRAFT', 'IN_PROGRESS', 'CANCELLED', 'VALIDATED', 'DISENGAGED'],
+    },
 
     /** Time when this organization was succesfully published on RUDI portal */
     [DB_PUBLISHED_AT]: Date,
