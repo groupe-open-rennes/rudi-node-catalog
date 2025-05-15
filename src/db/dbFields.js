@@ -169,6 +169,7 @@ export const API_ORGANIZATION_ADDRESS = 'organization_address'
 export const API_ORGANIZATION_COORDINATES = 'organization_coordinates'
 export const API_ORGANIZATION_CAPTION = 'organization_caption'
 export const API_ORGANIZATION_SUMMARY = 'organization_summary'
+export const API_ORGANIZATION_VALIDATION_STATUS = 'organization_status'
 
 // -------------------------------------------------------------------------------------------------
 // Contact properties
