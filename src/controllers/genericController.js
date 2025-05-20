@@ -671,6 +671,7 @@ async function upsertSingleObject(inputObject, objectType, objectStandard, objec
   let rudiObject
   try {
     // Désactive la modification des objets de type Organisation
+    // En attend le workflow de modification d'une organization côté Portail RUDI-5672
     if (OBJ_ORGANIZATIONS !== objectType) {
       if (objectFormat === DEFAULT_OBJECT_FORMAT && objectStandard === DEFAULT_OBJECT_STANDARD) {
         rudiObject = inputObject
