@@ -42,7 +42,7 @@ import {
   getPortalAuthCredentials,
   getPortalAuthHeaders,
   getPortalMetaUrl,
-  getPortalProducerStatusUrl,
+  getPortalOrganizationUrl,
   getUrlPortalAuthCheck,
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
@@ -100,6 +100,9 @@ export const updateOrganizationFromPortal = async (req, reply) => {
   logT(mod, fun)
 
   try {
+    // Si le portail n'est pas configuré, on ne fait pas d'appel
+    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+
     let portalOrganization = await getPortalOrganization(req, reply)
 
     logT(mod, fun, portalOrganization)
@@ -131,7 +134,7 @@ export const getPortalOrganization = async (req, reply) => {
     if (organizationId) logD(mod, fun, `organizationId: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
     const additionalParameters = req.url?.split('?')[1]
-    return await httpGet(getPortalProducerStatusUrl(organizationId, additionalParameters), token)
+    return await httpGet(getPortalOrganizationUrl(organizationId, additionalParameters), token)
   } catch (err) {
     // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)
