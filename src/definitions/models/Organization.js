@@ -11,16 +11,16 @@ const { omit } = _
 // Constants
 // -------------------------------------------------------------------------------------------------
 import {
-  API_COLLECTION_TAG,
-  API_ORGANIZATION_ADDRESS,
-  API_ORGANIZATION_CAPTION,
-  API_ORGANIZATION_COORDINATES,
-  API_ORGANIZATION_ID,
-  API_ORGANIZATION_NAME,
-  API_ORGANIZATION_SUMMARY,
-  API_ORGANIZATION_VALIDATION_STATUS,
-  DB_PUBLISHED_AT,
-  FIELDS_TO_SKIP,
+    API_COLLECTION_TAG,
+    API_ORGANIZATION_ADDRESS, API_ORGANIZATION_ATTACHMENT_STATUS,
+    API_ORGANIZATION_CAPTION,
+    API_ORGANIZATION_COORDINATES,
+    API_ORGANIZATION_ID,
+    API_ORGANIZATION_NAME,
+    API_ORGANIZATION_SUMMARY,
+    API_ORGANIZATION_VALIDATION_STATUS,
+    DB_PUBLISHED_AT,
+    FIELDS_TO_SKIP,
 } from '../../db/dbFields.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -65,6 +65,12 @@ const OrganizationSchema = new mongoose.Schema(
 
     /** Status of the organization on portal */
     [API_ORGANIZATION_VALIDATION_STATUS]: {
+      type: String,
+      enum: ['DRAFT', 'IN_PROGRESS', 'CANCELLED', 'VALIDATED', 'DISENGAGED'],
+    },
+
+    /** Status of the organization attachement to this node on Portal */
+    [API_ORGANIZATION_ATTACHMENT_STATUS]: {
       type: String,
       enum: ['DRAFT', 'IN_PROGRESS', 'CANCELLED', 'VALIDATED', 'DISENGAGED'],
     },

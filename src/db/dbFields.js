@@ -170,6 +170,7 @@ export const API_ORGANIZATION_COORDINATES = 'organization_coordinates'
 export const API_ORGANIZATION_CAPTION = 'organization_caption'
 export const API_ORGANIZATION_SUMMARY = 'organization_summary'
 export const API_ORGANIZATION_VALIDATION_STATUS = 'organization_status'
+export const API_ORGANIZATION_ATTACHMENT_STATUS = 'linked_producer_status'
 
 // -------------------------------------------------------------------------------------------------
 // Contact properties
