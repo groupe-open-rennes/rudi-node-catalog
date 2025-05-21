@@ -47,6 +47,7 @@ import {
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
+  isOrganizationAttachedUrl,
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
@@ -104,6 +105,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
     if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
     let portalOrganization = await getPortalOrganization(req, reply)
+    let isAttached = await isOrganizationAttached(req, reply)
 
     logT(mod, fun, portalOrganization)
 
@@ -111,7 +113,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
       let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization)
+        updateOrganization(organization, portalOrganization, isAttached)
 
         organization.save()
       }
@@ -135,6 +137,25 @@ export const getPortalOrganization = async (req, reply) => {
     logI(mod, fun, `organizationId: ${organizationId}`)
     const additionalParameters = req.url?.split('?')[1]
     return await httpGet(getPortalOrganizationUrl(organizationId, additionalParameters), token)
+  } catch (err) {
+    // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const isOrganizationAttached = async (req, reply) => {
+  const fun = 'isOrganizationAttached'
+  logT(mod, fun)
+
+  const token = await getPortalToken()
+
+  try {
+    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) organizationId = undefined
+    if (organizationId) logD(mod, fun, `organizationId: ${organizationId}`)
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    return await httpGet(isOrganizationAttachedUrl(organizationId), token)
   } catch (err) {
     // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)
@@ -772,8 +793,10 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganziation) {
+function updateOrganization(organization, portalOrganziation, isAttached) {
   organization.organization_status = portalOrganziation.organization_status
+  organization.linked_producer_status = isAttached ? 'VALIDATED' : undefined
+
   if (
     Date.parse(organization.updatedAt) <
     Date.parse(portalOrganziation?.organization_dates?.modified)
