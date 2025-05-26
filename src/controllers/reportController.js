@@ -21,6 +21,7 @@ import {
   API_VERSION,
   DEFAULT_QUERY_LIMIT,
   OBJ_METADATA,
+  OBJ_ORGANIZATIONS,
   OBJ_REPORTS,
   PARAM_ID,
   PARAM_OBJECT,
@@ -35,6 +36,7 @@ import {
   QUERY_UPDATED_BEFORE,
   QUERY_UPDATED_BEFORE_CAML,
   URL_PUB_METADATA,
+  URL_PUB_ORGA,
   URL_PV_OBJECT_GENERIC,
 } from '../config/constApi.js'
 import {
@@ -214,6 +216,12 @@ export const addOrEditSingleReportForMetadata = async (req, reply) => {
   return await addOrEditSingleReport(OBJ_METADATA, req, reply)
 }
 
+export const addOrEditSingleReportForOrganization = async (req, reply) => {
+  const fun = 'addOrEditSingleReportForOrganization'
+  logT(mod, fun, `< PUT ${URL_PUB_ORGA}/${PARAM_ID}/${ACT_REPORT}`)
+  return await addOrEditSingleReport(OBJ_ORGANIZATIONS, req, reply)
+}
+
 // Update an existing report for one object integration (private)
 export const addOrEditSingleReportForObject = async (req, reply) => {
   const fun = 'addOrEditSingleReportForObject'
@@ -236,7 +244,9 @@ export const addOrEditSingleReport = async (objectType, req, reply) => {
     // retrieve body parameters: object id, report id
     const reportId = accessProperty(reportBody, API_REPORT_ID)
     const bodyObjectId = accessProperty(reportBody, API_REPORT_RESOURCE_ID)
-    removeMetadataFromWaitingList(urlObjectId, reportId)
+    if (objectType === OBJ_METADATA) {
+      removeMetadataFromWaitingList(urlObjectId, reportId)
+    }
 
     // ensure url object id and body object id match
     if (urlObjectId !== bodyObjectId)

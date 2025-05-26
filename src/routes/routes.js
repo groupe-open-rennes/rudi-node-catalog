@@ -86,6 +86,7 @@ import {
 import {
   addOrEditSingleReportForMetadata,
   addOrEditSingleReportForObject,
+  addOrEditSingleReportForOrganization,
   addSingleReportForObject,
   deleteEveryReportForObject,
   deleteManyReportForObject,
@@ -358,6 +359,14 @@ export const portalRoutes = [
     url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, `${ACT_REPORT}`),
     handler: addOrEditSingleReportForMetadata,
     config: { [ROUTE_NAME]: 'portal_upsert_one_report' },
+  },
+  //Add/edit 1 report for one organization integration
+  {
+    description: 'Add/edit 1 report for one organization integration',
+    method: 'PUT',
+    url: getPublicPath(OBJ_ORGANIZATIONS, `:${PARAM_ID}`, `${ACT_REPORT}`),
+    handler: addOrEditSingleReportForOrganization,
+    config: { [ROUTE_NAME]: 'portal_put_org_report' },
   },
 
   // Get all reports for one object integration
