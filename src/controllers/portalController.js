@@ -143,6 +143,22 @@ export const getPortalOrganization = async (req, reply) => {
   }
 }
 
+export const createPortalOrganization = async (organization) => {
+  const fun = 'createPortalOrganization'
+  logT(mod, fun)
+
+  if (!organization) return organization
+
+  const token = await getPortalToken()
+
+  try {
+    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+    return await httpPost(getPortalOrganizationUrl(), organization, token)
+  } catch (err) {
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
 export const isOrganizationAttached = async (req, reply) => {
   const fun = 'isOrganizationAttached'
   logT(mod, fun)

@@ -1,3 +1,5 @@
+import { isPortalConnectionDisabled } from '../config/confPortal.js'
+
 const mod = 'genCtrl'
 /*
  * In this file are made the different steps followed for each
@@ -126,8 +128,8 @@ import {
 } from '../db/dbFields.js'
 import Contact from '../definitions/models/Contact.js'
 import { Media } from '../definitions/models/Media.js'
-import Organization from '../definitions/models/Organization.js'
-import { deletePortalMetadata } from './portalController.js'
+import Organization, { OrganizationStatus } from '../definitions/models/Organization.js'
+import { createPortalOrganization, deletePortalMetadata } from './portalController.js'
 
 // -------------------------------------------------------------------------------------------------
 // Specific object type helper functions
@@ -196,6 +198,16 @@ async function newRudiObject(Model, objectData) {
   const fun = 'newRudiObject'
   try {
     const dbObject = new Model(objectData)
+
+    // On envoie la demande de création de l'organisation au portail si celui-ci est lié
+    if (!isPortalConnectionDisabled()) {
+      let organizationId = await createPortalOrganization(dbObject)
+      if (organizationId) {
+        dbObject['organization_id'] = organizationId
+        dbObject['organization_status'] = OrganizationStatus.DRAFT
+      }
+    }
+
     await dbObject.save()
     return dbObject
   } catch (err) {

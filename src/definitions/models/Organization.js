@@ -32,6 +32,21 @@ import { RudiError } from '../../utils/errors.js'
 import { GpsCoordinatesSchema } from '../schemas/GpsCoordinates.js'
 import { UuidV4Schema } from '../schemas/Identifiers.js'
 
+export const OrganizationStatus = {
+  DRAFT: 'DRAFT',
+  IN_PROGRESS: 'IN_PROGRESS',
+  CANCELLED: 'CANCELLED',
+  VALIDATED: 'VALIDATED',
+  DISENGAGED: 'DISENGAGED',
+}
+export const LinkedProducerStatus = {
+  DRAFT: 'DRAFT',
+  IN_PROGRESS: 'IN_PROGRESS',
+  CANCELLED: 'CANCELLED',
+  VALIDATED: 'VALIDATED',
+  DISENGAGED: 'DISENGAGED',
+}
+
 // -------------------------------------------------------------------------------------------------
 // Custom schema definition
 // -------------------------------------------------------------------------------------------------
@@ -67,13 +82,13 @@ const OrganizationSchema = new mongoose.Schema(
     /** Status of the organization on portal */
     [API_ORGANIZATION_VALIDATION_STATUS]: {
       type: String,
-      enum: ['DRAFT', 'IN_PROGRESS', 'CANCELLED', 'VALIDATED', 'DISENGAGED'],
+      enum: Object.values(OrganizationStatus),
     },
 
     /** Status of the organization attachement to this node on Portal */
     [API_ORGANIZATION_ATTACHMENT_STATUS]: {
       type: String,
-      enum: ['DRAFT', 'IN_PROGRESS', 'CANCELLED', 'VALIDATED', 'DISENGAGED'],
+      enum: Object.values(LinkedProducerStatus),
     },
 
     /** Time when this organization was succesfully published on RUDI portal */
