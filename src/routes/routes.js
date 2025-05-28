@@ -1,3 +1,5 @@
+import { searchOrganizations } from '../controllers/organizationController.js'
+
 const mod = 'routes'
 
 // -------------------------------------------------------------------------------------------------
@@ -154,7 +156,7 @@ import {
   getPortalMetadataFields,
 } from '../controllers/stateController.js'
 import { test } from '../controllers/testController.js'
-import { getAllContacts, getAllOrganizations } from '../db/dbQueries.js'
+import { getAllContacts } from '../db/dbQueries.js'
 import {
   onPortalRoute,
   onPrivateRoute,
@@ -250,7 +252,7 @@ export const publicRoutes = [
     description: 'Access all organizations created on the RUDI producer node',
     method: 'GET',
     url: getPublicPath(OBJ_ORGANIZATIONS),
-    handler: getAllOrganizations,
+    handler: searchOrganizations,
     config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
   },
   {
