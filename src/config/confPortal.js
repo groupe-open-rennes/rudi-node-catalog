@@ -131,7 +131,9 @@ export const postPortalMetaUrl = (id) => pathJoin(API_PORTAL_URL, API_SEND_META_
 
 export const getPortalOrganizationUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
-  const reqUrl = pathJoin(API_PORTAL_URL, API_GET_ORG_URL.replace('{{id}}', id))
+  const reqUrl = !id
+    ? pathJoin(API_PORTAL_URL, API_GET_ORG_URL.replace('/{{id}}', ''))
+    : pathJoin(API_PORTAL_URL, API_GET_ORG_URL.replace('{{id}}', id))
   const options = additionalParameters ? `?${additionalParameters}` : ''
   return `${reqUrl}${options}`
 }
