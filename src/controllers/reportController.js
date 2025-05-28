@@ -1,4 +1,4 @@
-import { LinkedProducerStatus, OrganizationStatus as OrgniaztionStatus } from '../definitions/models/Organization.js'
+import { LinkedProducerStatus, OrganizationStatus } from '../definitions/models/Organization.js'
 
 const mod = 'repCtrl'
 /*
@@ -562,8 +562,8 @@ export const treatOrgnizationsReports = async (objectType, urlObjectId, reportBo
     case ReportMethods.POST:
       dbObject[API_ORGANIZATION_VALIDATION_STATUS] =
         reportBody[API_REPORT_STATUS] === IntegrationStatus.OK
-          ? OrgniaztionStatus.VALIDATED
-          : OrgniaztionStatus.CANCELLED
+          ? OrganizationStatus.VALIDATED
+          : OrganizationStatus.CANCELLED
       break
     case ReportMethods.ATTACH:
       dbObject[API_ORGANIZATION_ATTACHMENT_STATUS] =
