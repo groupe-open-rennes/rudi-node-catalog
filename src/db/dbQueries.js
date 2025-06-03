@@ -1072,16 +1072,24 @@ export const overwriteDbObject = async (objectType, updateData) => {
       updateData[DB_CREATED_AT] = existingObject[DB_CREATED_AT]
 
       setNullForMissingLeaves(existingObject.toJSON(), updateData)
+      logD(mod, fun, `file_size after setNullForMissingLeaves: ${updateData.file_size}`)
     }
     const updateOpts = {
       new: true, // returns the updated document
-      // overwrite: true,
+      returnDocument: 'after',
       upsert: true, // creates the document if it wasn't found
     }
-    const dbObject = await ObjModel.findOneAndUpdate(filter, updateData, updateOpts)
-    // logD(mod, fun, `dbObject: ${beautify(dbObject)}`)
+    // logD(mod, fun, `filter: ${beautify(filter)}`)
+    // logD(mod, fun, `updateOpts: ${beautify(updateOpts)}`)
+    // logD(mod, fun, `updateData: ${beautify(updateData)}`)
+    mongoose.set('debug', true)
+    await (existingObject
+      ? ObjModel.replaceOne(filter, updateData, updateOpts)
+      : ObjModel.create(updateData))
 
-    await dbObject.save()
+    const dbObject = ObjModel.findOne(filter)
+    // logD(mod, fun, `dbObject: ${beautify(dbObject)}`)
+    // await dbObject.save()
     return dbObject
   } catch (err) {
     let idKey
