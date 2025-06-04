@@ -5,7 +5,10 @@ import { logD, logE, logI, logT } from '../../src/utils/logging.js'
 import mongoose from 'mongoose'
 import fs from 'fs/promises'
 import path from 'path'
-import Organization from '../../src/definitions/models/Organization.js'
+import Organization, {
+  LinkedProducerStatus,
+  OrganizationStatus,
+} from '../../src/definitions/models/Organization.js'
 import { getDbFullUri } from '../../src/config/confSystem.js'
 
 const BACKUP_DIR = './migrations/backups'
@@ -21,10 +24,10 @@ async function createBackup(organizations) {
   try {
     await fs.mkdir(BACKUP_DIR, { recursive: true })
     await fs.writeFile(backupPath, JSON.stringify(organizations, null, 2))
-    logD(mod, fun, `✓ Sauvegarde créée avec succès: ${backupPath}`)
+    logD(mod, fun, `Sauvegarde créée avec succès: ${backupPath}`)
     return backupPath
   } catch (error) {
-    logE(mod, fun, '❌ Erreur lors de la création de la sauvegarde:', error)
+    logE(mod, fun, 'Erreur lors de la création de la sauvegarde:', error)
     throw error
   }
 }
@@ -32,7 +35,7 @@ async function createBackup(organizations) {
 async function rollback(backupPath) {
   const fun = 'rollback'
   try {
-    logD(mod, fun, '🔄 Début du rollback...')
+    logD(mod, fun, 'Début du rollback...')
     const backupData = JSON.parse(await fs.readFile(backupPath, 'utf8'))
 
     for (const org of backupData) {
@@ -42,9 +45,9 @@ async function rollback(backupPath) {
         linked_producer_status: org.linked_producer_status,
       })
     }
-    logD(mod, fun, '✓ Rollback effectué avec succès')
+    logD(mod, fun, 'Rollback effectué avec succès')
   } catch (error) {
-    logE(mod, fun, '❌ Erreur lors du rollback:', error)
+    logE(mod, fun, 'Erreur lors du rollback:', error)
     throw error
   }
 }
@@ -61,7 +64,7 @@ export async function migrate() {
   try {
     logI(mod, fun, `MongoDB URI: ${MONGODB_URI}`)
     await mongoose.connect(MONGODB_URI)
-    logD(mod, fun, '✓ Connecté à MongoDB')
+    logD(mod, fun, 'Connecté à MongoDB')
 
     const organizations = await Organization.find({})
 
@@ -73,21 +76,21 @@ export async function migrate() {
       $or: [
         { organization_status: { $exists: false } },
         {
-          organization_status: 'VALIDATED',
+          organization_status: OrganizationStatus.VALIDATED,
           linked_producer_status: { $exists: false },
         },
       ],
     })
 
-    logI(mod, fun, `📊 Nombre d'organisations à mettre à jour: ${organizationsToUpdate.length}`)
+    logI(mod, fun, `Nombre d'organisations à mettre à jour: ${organizationsToUpdate.length}`)
 
     // Mise à jour des organisations
     for (const org of organizationsToUpdate) {
       try {
         // eslint-disable-next-line no-await-in-loop
         await Organization.findByIdAndUpdate(org._id, {
-          organization_status: 'VALIDATED',
-          linked_producer_status: 'VALIDATED',
+          organization_status: OrganizationStatus.VALIDATED,
+          linked_producer_status: LinkedProducerStatus.VALIDATED,
         })
         successCount++
       } catch (error) {
@@ -100,20 +103,20 @@ export async function migrate() {
     }
 
     // Rapport final
-    logI(mod, fun, '\n📝 Rapport de migration:')
-    logI(mod, fun, `✓ Organisations mises à jour avec succès: ${successCount}`)
-    logI(mod, fun, `❌ Échecs: ${errorCount}`)
+    logI(mod, fun, '\nRapport de migration:')
+    logI(mod, fun, `Organisations mises à jour avec succès: ${successCount}`)
+    logI(mod, fun, `Échecs: ${errorCount}`)
 
     if (errors.length > 0) {
-      logI(mod, fun, '\n❌ Détail des erreurs:')
+      logI(mod, fun, '\nDétail des erreurs:')
       errors.forEach((err) => {
         logI(mod, fun, `- Organization ${err.organizationId}: ${err.error}`)
       })
     }
   } catch (error) {
-    logE(mod, fun, '❌ Erreur générale lors de la migration:', error)
+    logE(mod, fun, 'Erreur générale lors de la migration:', error)
     if (backupPath) {
-      logE(mod, fun, '🔄 Tentative de rollback...')
+      logE(mod, fun, 'Tentative de rollback...')
       await rollback(backupPath)
     }
   } finally {
