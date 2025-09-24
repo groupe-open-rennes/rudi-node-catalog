@@ -10,7 +10,7 @@ import { getDbFullUri } from '../src/config/confSystem.js'
 import { Migration } from './model/migrationSchema.js'
 
 const MIGRATION_SECTION = 'migration'
-const AUTO_UPDATE_SCHEMAS = getConf(MIGRATION_SECTION, 'auto_update_schemas') ?? true
+const AUTO_UPDATE_SCHEMAS = getConf(MIGRATION_SECTION, 'auto_update_schema') ?? true
 const DISABLE_DB_LOGGING = true
 const MIGRATIONS_DIR = './migrations/scripts'
 const BACKUPS_DIR = './migrations/backups'
