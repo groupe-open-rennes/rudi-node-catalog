@@ -1,77 +1,52 @@
 const mod = 'migration_organizations_status'
 
-import { logD, logE, logI, logT } from '../../src/utils/logging.js'
+import { logI, logT } from '../../src/utils/logging.js'
 
-import mongoose from 'mongoose'
-import fs from 'fs/promises'
-import path from 'path'
-import Organization, {
-  LinkedProducerStatus,
-  OrganizationStatus,
-} from '../../src/definitions/models/Organization.js'
-import { getDbFullUri } from '../../src/config/confSystem.js'
+// Import the model module to get the Schema and enums
+import * as OrganizationModule from '../../src/definitions/models/Organization.js'
 
-const BACKUP_DIR = './migrations/backups'
-const MONGODB_URI = getDbFullUri()
-
-async function createBackup(organizations) {
-  const fun = 'createBackup'
+/**
+ * Builds and retrieves the Organization model using the provided database connection and schema.
+ *
+ * @param {Object} options - The configuration object.
+ * @param {Object} options.connection - The database connection to use for associating the schema to the model.
+ *
+ * @return {Object} The Organization model associated with the database connection.
+ * @throws {Error} If the 'Organization' schema is not found.
+ */
+function buildSchema({ connection }) {
+  const fun = 'buildSchema'
   logT(mod, fun)
 
-  const timestamp = new Date().toISOString().replace(/[:\.]/g, '-')
-  const backupPath = path.join(BACKUP_DIR, `organizations_backup_${timestamp}.json`)
-
-  try {
-    await fs.mkdir(BACKUP_DIR, { recursive: true })
-    await fs.writeFile(backupPath, JSON.stringify(organizations, null, 2))
-    logD(mod, fun, `Sauvegarde créée avec succès: ${backupPath}`)
-    return backupPath
-  } catch (error) {
-    logE(mod, fun, 'Erreur lors de la création de la sauvegarde:', error)
-    throw error
-  }
+  // Create the model on the dedicated migration connection
+  const schema =
+    OrganizationModule.Organization?.schema ||
+    OrganizationModule.schema ||
+    OrganizationModule.default?.schema
+  if (!schema) throw new Error("Schema 'Organization' not found")
+  return connection.models?.Organization || connection.model('Organization', schema)
 }
 
-async function rollback(backupPath) {
-  const fun = 'rollback'
-  try {
-    logD(mod, fun, 'Début du rollback...')
-    const backupData = JSON.parse(await fs.readFile(backupPath, 'utf8'))
-
-    for (const org of backupData) {
-      // eslint-disable-next-line no-await-in-loop
-      await Organization.findByIdAndUpdate(org._id, {
-        organization_status: org.organization_status,
-        linked_producer_status: org.linked_producer_status,
-      })
-    }
-    logD(mod, fun, 'Rollback effectué avec succès')
-  } catch (error) {
-    logE(mod, fun, 'Erreur lors du rollback:', error)
-    throw error
-  }
-}
-
-export async function migrate() {
+/**
+ * Migrates specified organizations by updating their status based on predefined rules.
+ *
+ * @param {Object} param - The parameter object.
+ * @param {Object} param.connection - The database connection to use for schema and operations.
+ * @return {Promise<void>} A promise that resolves when the migration process completes.
+ */
+export async function migrate({ connection }) {
   const fun = 'migrateOrganizations'
   logT(mod, fun)
 
-  let backupPath
+  // Create the model on the dedicated migration connection
+  const Organization = buildSchema({ connection })
+  const { LinkedProducerStatus, OrganizationStatus } = OrganizationModule
+
   let successCount = 0
   let errorCount = 0
   const errors = []
 
   try {
-    logI(mod, fun, `MongoDB URI: ${MONGODB_URI}`)
-    await mongoose.connect(MONGODB_URI)
-    logD(mod, fun, 'Connecté à MongoDB')
-
-    const organizations = await Organization.find({})
-
-    // Création de la sauvegarde
-    backupPath = await createBackup(organizations)
-
-    // Récupération des organisations à mettre à jour
     const organizationsToUpdate = await Organization.find({
       $or: [
         { organization_status: { $exists: false } },
@@ -82,9 +57,8 @@ export async function migrate() {
       ],
     })
 
-    logI(mod, fun, `Nombre d'organisations à mettre à jour: ${organizationsToUpdate.length}`)
+    logI(mod, fun, `Number of organizations to update: ${organizationsToUpdate.length}`)
 
-    // Mise à jour des organisations
     for (const org of organizationsToUpdate) {
       try {
         // eslint-disable-next-line no-await-in-loop
@@ -95,31 +69,18 @@ export async function migrate() {
         successCount++
       } catch (error) {
         errorCount++
-        errors.push({
-          organizationId: org._id,
-          error: error.message,
-        })
+        errors.push({ organizationId: org._id, error: error.message })
       }
     }
 
-    // Rapport final
-    logI(mod, fun, '\nRapport de migration:')
-    logI(mod, fun, `Organisations mises à jour avec succès: ${successCount}`)
-    logI(mod, fun, `Échecs: ${errorCount}`)
-
+    logI(mod, fun, 'Migration report:')
+    logI(mod, fun, `Organizations updated successfully: ${successCount}`)
+    logI(mod, fun, `Failures: ${errorCount}`)
     if (errors.length > 0) {
-      logI(mod, fun, '\nDétail des erreurs:')
-      errors.forEach((err) => {
-        logI(mod, fun, `- Organization ${err.organizationId}: ${err.error}`)
-      })
+      logI(mod, fun, 'Error details:')
+      errors.forEach((err) => logI(mod, fun, `- Organization ${err.organizationId}: ${err.error}`))
     }
   } catch (error) {
-    logE(mod, fun, 'Erreur générale lors de la migration:', error)
-    if (backupPath) {
-      logE(mod, fun, 'Tentative de rollback...')
-      await rollback(backupPath)
-    }
-  } finally {
-    await mongoose.connection.close()
+    throw error
   }
 }

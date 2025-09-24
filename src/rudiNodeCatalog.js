@@ -20,7 +20,8 @@ import {
 // 3. Log conf
 import './config/confLogs.js'
 
-// 4. Anything, now
+// 4. migration
+import { runMigrations } from '../migrations/runMigration.js'
 
 // -------------------------------------------------------------------------------------------------
 // External dependencies
@@ -223,9 +224,16 @@ async function shutDown(signal) {
 // -------------------------------------------------------------------------------------------------
 // RUN SERVER
 // -------------------------------------------------------------------------------------------------
-export const runRudiCatalog = () =>
-  start().catch((err) => {
+export const runRudiCatalog = async () => {
+  try {
+    const migrated = await runMigrations()
+    if (!migrated) {
+      throw new Error('Les migrations n’ont pas pu être exécutées')
+    }
+    await start()
+  } catch (err) {
     logE(mod, 'server', `Crashed: ${err}`)
     sysCrit(`Server crashed: ${err}`, 'rudiServer.running', {}, { error: err })
     process.exit(1)
-  })
+  }
+}
