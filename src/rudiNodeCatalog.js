@@ -228,7 +228,7 @@ export const runRudiCatalog = async () => {
   try {
     const migrated = await runMigrations()
     if (!migrated) {
-      throw new Error('Les migrations n’ont pas pu être exécutées')
+      throw new Error('Migration execution aborted')
     }
     await start()
   } catch (err) {
