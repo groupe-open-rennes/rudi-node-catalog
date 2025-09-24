@@ -264,12 +264,7 @@ export async function runMigrations() {
 
   let dbBackupPath = null
   try {
-    await migrationConnection.openUri(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000,
-    })
+    await migrationConnection.openUri(MONGODB_URI)
     logWithoutDB.debug(mod, fun, 'Connected to MongoDB')
 
     const migrationFiles = await getMigrationFiles()
