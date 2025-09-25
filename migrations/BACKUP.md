@@ -1,6 +1,6 @@
 # Backups
 
-This folder stores database backups created by the migration tool to allow rollbacks if a migration fails.
+Backups created by the migration tool are stored in `backups_dir` to allow rollbacks if a migration fails.
 
 ## When backups are created
 
@@ -36,13 +36,13 @@ Note: The exact command depends on your environment and the dump structure. Alwa
 
 - Backups accumulate in this directory and are not automatically pruned.
 - Recommended practices:
-  - Keep at least the most recent successful backup for each environment.
-  - Periodically clean older backups to save disk space.
-  - Never delete a backup that is associated with a failed migration until the issue is resolved.
+    - Keep at least the most recent successful backup for each environment.
+    - Periodically clean older backups to save disk space.
+    - Never delete a backup associated with a failed migration until the issue is resolved.
 
 ## Security and compliance
 
 - Backups may contain sensitive data. Ensure:
-  - Proper file permissions on this directory.
-  - Backups are excluded from public artifacts and untrusted shares.
-  - If exported off-host, use encrypted storage and secure transfer.
+    - Proper file permissions on the `backups_dir`
+    - Backups are excluded from public artifacts and untrusted shares.
+    - If exported off-host, use encrypted storage and secure transfer.
