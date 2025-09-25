@@ -13,7 +13,7 @@ The API module provides :
 
 - A definition of the RUDI metadata that is compatible with the definition (https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER)
 - An external API for fetching open-data metadata (public and accessible without any authentication)
-- An internal API for creating, accessing, updating, and deleting metadata (https://app.swaggerhub.com/apis/OlivierMartineau/RudiProducer-InternalAPI)
+- An internal API for creating, accessing, updating and deleting metadata (https://app.swaggerhub.com/apis/OlivierMartineau/RudiProducer-InternalAPI)
 
 ---
 
