@@ -6,7 +6,7 @@ It works as follows:
 1. It determines the last executed migration version from the database (the `migration` collection/table).
 2. It scans the `./scripts` directory for migration files named with the pattern `NNN__short_description.js` (three digits, double underscore).
 3. If there are scripts with a version greater than the database’s last version:
-   - It creates a database backup in `./backups`.
+   - It creates a database backup.
    - It executes all pending scripts sequentially (lowest to highest version).
    - It records each executed migration in the `migration` collection/table.
 4. If all migrations succeed, the application proceeds to start normally.
@@ -20,8 +20,14 @@ It works as follows:
 
 - Automatic execution of missing scripts can be disabled by setting `auto_update_schema=false`.
   - When disabled and the schema is outdated, the application will not start.
-- Backups are created under `./backups` before applying any pending migrations.
+- Backups directory is configurable via `backups_dir` ([see Backups section](#backups)).
 
+#### Exemple :
+```ini 
+[migration]
+auto_update_schema = true
+backups_dir= /backup/directory
+```
 ## Execution
 
 - The migration tool runs automatically at application startup.
@@ -48,7 +54,7 @@ It works as follows:
 
 ## Backups
 
-- Location: `./backups`
+- Location: controlled by `backups_dir`.
 - Each backup is a full database dump created immediately before applying pending migrations.
 - In case of failure, the tool attempts to restore the database from the latest backup created for that run.
 
@@ -63,6 +69,6 @@ It works as follows:
 - “No migration file found”: ensure your files follow `NNN__name.js` with a double underscore and live in `./scripts`.
 - “Application cannot start; schemas must be updated beforehand.”: set `auto_update_schema=true` or apply migrations manually before starting.
 - On failure, check:
-  - The most recent backup in `./backups`.
+  - The most recent backup in the directory defined by `backups_dir`.
   - Application logs for the failing script and restore status.
 
