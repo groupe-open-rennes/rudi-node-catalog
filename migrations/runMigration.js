@@ -1,6 +1,6 @@
-import { getConf } from '../src/config/appOptions.js'
-
 const mod = 'runMigrations'
+
+import { getConf } from '../src/config/appOptions.js'
 
 import mongoose from 'mongoose'
 import fs from 'fs/promises'
@@ -13,7 +13,7 @@ const MIGRATION_SECTION = 'migration'
 const AUTO_UPDATE_SCHEMAS = getConf(MIGRATION_SECTION, 'auto_update_schema', true)
 const DISABLE_DB_LOGGING = true
 const MIGRATIONS_DIR = './migrations/scripts'
-const BACKUPS_DIR = getConf(MIGRATION_SECTION, 'backups_dir','./migrations/backups')
+const BACKUPS_DIR = getConf(MIGRATION_SECTION, 'backups_dir', './migrations/backups')
 const MONGODB_URI = getDbFullUri()
 
 // Logger that disables log writing in the database to avoid noise during migrations
