@@ -3,6 +3,8 @@ const mod = 'runMigrations'
 import { getConf } from '../src/config/appOptions.js'
 
 import mongoose from 'mongoose'
+
+import { wConsoleLogger } from '../src/config/confLogs.js'
 import fs from 'fs/promises'
 import path from 'path'
 import { logD, logE, logI } from '../src/utils/logging.js'
@@ -261,7 +263,6 @@ async function runMigration(filename, version) {
  */
 export async function runMigrations() {
   const fun = 'runMigrations'
-
   let dbBackupPath = null
   try {
     await migrationConnection.openUri(MONGODB_URI)
@@ -321,25 +322,53 @@ export async function runMigrations() {
         logWithoutDB.error(mod, fun, `Restore failed: ${restoreErr.message}`)
       }
     }
-    throw error
-  } finally {
-    try {
-      await migrationConnection.close()
-      logWithoutDB.debug(mod, fun, 'MongoDB connection closed')
-    } catch (error) {
-      logWithoutDB.error(mod, fun, `Error while closing the connection: ${error.message}`)
-    }
+    return false
   }
 }
 
-//  Only executed when run directly (not when imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runMigrations()
-    .then(() => {
-      process.exit(0)
-    })
-    .catch((error) => {
-      logWithoutDB.error(mod, 'main', `Fatal error: ${error.message}`)
-      process.exit(1)
-    })
+// --- graceful closure ---
+async function closeGracefully() {
+  // Close Mongoose if a connection is open
+  try {
+    if (mongoose?.connection?.readyState === 1 || mongoose?.connection?.readyState === 2) {
+      await mongoose.connection.close(false)
+    }
+  } catch (e) {
+  }
+  
+  // Flush/close winston transports if needed
+  try {
+    // winston doesn’t always provide a global close; we can call close on each transport
+    const transports = wConsoleLogger?.transports ?? []
+    for (const t of transports) {
+      if (typeof t?.close === 'function') {
+        try {
+          t.close()
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+}
+
+// --- Standalone launcher ---
+async function main() {
+  const ok = await runMigrations()
+  try {
+    await closeGracefully()
+  } finally {
+    process.exit(ok ? 0 : 1)
+  }
+}
+
+// If run directly via `node ./migrations/runMigration.js`, execute main()
+// If imported by the app (rudiNodeCatalog.js), do not call main() and let the app manage the lifecycle
+if (import.meta && import.meta.url && typeof process !== 'undefined') {
+  const isDirect =
+    typeof require === 'undefined'
+      ? process.argv[1] && new URL(import.meta.url).pathname.endsWith(process.argv[1].split(/[\\/]/).pop())
+      : require.main === module
+
+  if (isDirect) {
+    main()
+  }
 }
