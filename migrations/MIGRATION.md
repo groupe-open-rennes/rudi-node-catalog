@@ -48,9 +48,9 @@ backups_dir= /backup/directory
 
 ### Example registry
 
-| Execution Rank | Script name                          | Creation date | Description                                                                                                                                                                                                            |
-|----------------|--------------------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 001            | 001__migration_organization_status.js | 2025-09-24    | Finds organizations with no `organization_status` set, or with `organization_status='VALIDATED'` and no `linked_producer_status`. Updates targeted organizations to set the missing status to `'VALIDATED'`.          |
+| Execution Rank | Script name                          | Creation date | Target Object        | Description                                                                                                                                                                                                      |
+|----------------|--------------------------------------|---------------|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 001            | 001__migration_organization_status.js | 2025-09-24    | MongoDB (Organization) | Finds organizations with no `organization_status` set, or with `organization_status='VALIDATED'` and no `linked_producer_status`. Updates targeted organizations to set the missing status to `'VALIDATED'`.          |
 
 ## Backups
 

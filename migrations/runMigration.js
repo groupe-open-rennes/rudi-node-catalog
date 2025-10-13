@@ -288,7 +288,7 @@ export async function runMigrations() {
           logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
           logWithoutDB.info(mod, fun, 'Selected file: ' + file)
 
-          const currentVersion = parseInt(file.substring(0, 3))
+          const currentVersion = Number.parseInt(file.substring(0, 3))
           if (currentVersion <= lastVersion) {
             logWithoutDB.debug(mod, fun, `Migration ${file} already executed, skipping`)
             continue
@@ -353,7 +353,7 @@ async function executeMigrations() {
 
 // If run directly via `node ./migrations/runMigration.js`, execute executeMigrations()
 // If imported by the app (rudiNodeCatalog.js), do not call executeMigrations() and let the app manage the lifecycle
-if (import.meta && import.meta.url && typeof process !== 'undefined') {
+if (import.meta?.url && typeof process !== 'undefined') {
   // Défine import logic
   const isImported = typeof require === 'undefined'
 
@@ -362,9 +362,13 @@ if (import.meta && import.meta.url && typeof process !== 'undefined') {
 
   const isDirect = isDirectByImport || isDirectByRequire
 
-  logWithoutDB.info(mod, 'executeMigrations', `isDirect: ${isDirect} - isImported: ${isImported} - isDirectByImport: ${isDirectByImport} - isDirectByRequire: ${isDirectByRequire}`)
+  logWithoutDB.info(mod, 'executeMigrations', `isDirect: ${isDirect} 
+  - isImported: ${isImported} 
+  - isDirectByImport: ${isDirectByImport} 
+  - isDirectByRequire: ${isDirectByRequire}`)
+
   if (isDirect) {
-    executeMigrations()
+    await executeMigrations()
   }
   // Else this file is only imported or required by the app, so do not execute migrations here
   // The app will manage the lifecycle and call runMigrations() when needed
