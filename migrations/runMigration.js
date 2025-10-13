@@ -3,6 +3,7 @@ const mod = 'runMigrations'
 import { getConf } from '../src/config/appOptions.js'
 
 import mongoose from 'mongoose'
+
 import fs from 'fs/promises'
 import path from 'path'
 import { logD, logE, logI } from '../src/utils/logging.js'
@@ -23,7 +24,7 @@ const logWithoutDB = {
   error: (mod, fun, msg) => logE(mod, fun, msg, !DISABLE_DB_LOGGING),
 }
 
-// Dedicated Mongoose connection for migrations (separate from the main app connection)
+// Dedicated Mongoose connection for migrations (separate from the executeMigrations app connection)
 const migrationConnection = mongoose.createConnection()
 
 // Migration model bound to the dedicated connection
@@ -261,7 +262,6 @@ async function runMigration(filename, version) {
  */
 export async function runMigrations() {
   const fun = 'runMigrations'
-
   let dbBackupPath = null
   try {
     await migrationConnection.openUri(MONGODB_URI)
@@ -279,27 +279,12 @@ export async function runMigrations() {
     }
 
     if (needMigration(migrationFiles, lastVersion)) {
-      logWithoutDB.info(mod, fun, `There are no pending migration files`)
+      logWithoutDB.info(mod, fun, `Migration files need to be executed`)
       if (AUTO_UPDATE_SCHEMAS) {
         // dump database before any migration
         dbBackupPath = await dumpDatabase()
 
-        for (const file of migrationFiles) {
-          logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
-          logWithoutDB.info(mod, fun, 'Selected file: ' + file)
-
-          const currentVersion = parseInt(file.substring(0, 3))
-          if (currentVersion <= lastVersion) {
-            logWithoutDB.debug(mod, fun, `Migration ${file} already executed, skipping`)
-            continue
-          }
-
-          // eslint-disable-next-line no-await-in-loop
-          await runMigration(file, currentVersion)
-        }
-
-        logWithoutDB.info(mod, fun, 'All migrations executed successfully')
-        return true
+        await migrateFiles(migrationFiles, lastVersion)
       }
 
       logWithoutDB.error(
@@ -321,25 +306,79 @@ export async function runMigrations() {
         logWithoutDB.error(mod, fun, `Restore failed: ${restoreErr.message}`)
       }
     }
-    throw error
-  } finally {
-    try {
-      await migrationConnection.close()
-      logWithoutDB.debug(mod, fun, 'MongoDB connection closed')
-    } catch (error) {
-      logWithoutDB.error(mod, fun, `Error while closing the connection: ${error.message}`)
-    }
+    return false
   }
 }
 
-//  Only executed when run directly (not when imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runMigrations()
-    .then(() => {
-      process.exit(0)
-    })
-    .catch((error) => {
-      logWithoutDB.error(mod, 'main', `Fatal error: ${error.message}`)
-      process.exit(1)
-    })
+async function migrateFiles(migrationFiles, lastVersion) {
+  const fun = 'migrateFiles'
+  for (const file of migrationFiles) {
+    logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
+    logWithoutDB.info(mod, fun, 'Selected file: ' + file)
+
+    const currentVersion = Number.parseInt(file.substring(0, 3))
+    if (currentVersion <= lastVersion) {
+      logWithoutDB.debug(mod, fun, `Migration ${file} already executed, skipping`)
+      continue
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await runMigration(file, currentVersion)
+  }
+
+  logWithoutDB.info(mod, fun, 'All migrations executed successfully')
+  return true
+}
+
+// --- graceful closure ---
+async function closeGracefully() {
+  const fun = 'closeGracefully'
+  // Close Mongoose if a connection is open
+  try {
+    if (mongoose?.connection?.readyState === 1 || mongoose?.connection?.readyState === 2) {
+      await mongoose.connection.close(false)
+    }
+  } catch (e) {
+    logWithoutDB.error(mod, fun, `Error closing Mongoose connection: ${e.message}`)
+  }
+}
+
+// --- Standalone launcher ---
+async function executeMigrations() {
+  const fun = 'executeMigrations'
+  const ok = await runMigrations()
+  logWithoutDB.info(mod, fun, `Migration process ended with status ${ok ? 'OK' : 'ERROR'}`)
+  try {
+    await closeGracefully()
+    logWithoutDB.info(mod, fun, 'Mongoose connection closed')
+  } finally {
+    process.exit(ok ? 0 : 1)
+  }
+}
+
+// If run directly via `node ./migrations/runMigration.js`, execute executeMigrations()
+// If imported by the app (rudiNodeCatalog.js), do not call executeMigrations() and let the app manage the lifecycle
+if (import.meta?.url && typeof process !== 'undefined') {
+  // Défine import logic
+  const isImported = typeof require === 'undefined'
+
+  const isDirectByImport =
+    isImported &&
+    process.argv[1] &&
+    new URL(import.meta.url).pathname.endsWith(process.argv[1].split(/[\\/]/).pop())
+  const isDirectByRequire = !isImported && require.main === module
+
+  const isDirect = isDirectByImport || isDirectByRequire
+
+  logWithoutDB.info(
+    mod,
+    'executeMigrations',
+    `isDirect: ${isDirect} - isImported: ${isImported} - isDirectByImport: ${isDirectByImport} - isDirectByRequire: ${isDirectByRequire}`
+  )
+
+  if (isDirect) {
+    await executeMigrations()
+  }
+  // Else this file is only imported or required by the app, so do not execute migrations here
+  // The app will manage the lifecycle and call runMigrations() when needed
 }
