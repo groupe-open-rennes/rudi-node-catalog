@@ -284,7 +284,7 @@ export async function runMigrations() {
         // dump database before any migration
         dbBackupPath = await dumpDatabase()
 
-        await migrate(migrationFiles, lastVersion)
+        await migrateFiles(migrationFiles, lastVersion)
       }
 
       logWithoutDB.error(
@@ -310,7 +310,8 @@ export async function runMigrations() {
   }
 }
 
-async function migrate(migrationFiles, lastVersion){
+async function migrateFiles(migrationFiles, lastVersion) {
+  const fun = 'migrateFiles'
   for (const file of migrationFiles) {
     logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
     logWithoutDB.info(mod, fun, 'Selected file: ' + file)
