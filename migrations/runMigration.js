@@ -284,22 +284,7 @@ export async function runMigrations() {
         // dump database before any migration
         dbBackupPath = await dumpDatabase()
 
-        for (const file of migrationFiles) {
-          logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
-          logWithoutDB.info(mod, fun, 'Selected file: ' + file)
-
-          const currentVersion = Number.parseInt(file.substring(0, 3))
-          if (currentVersion <= lastVersion) {
-            logWithoutDB.debug(mod, fun, `Migration ${file} already executed, skipping`)
-            continue
-          }
-
-          // eslint-disable-next-line no-await-in-loop
-          await runMigration(file, currentVersion)
-        }
-
-        logWithoutDB.info(mod, fun, 'All migrations executed successfully')
-        return true
+        await migrate(migrationFiles, lastVersion)
       }
 
       logWithoutDB.error(
@@ -323,6 +308,25 @@ export async function runMigrations() {
     }
     return false
   }
+}
+
+async function migrate(migrationFiles, lastVersion){
+  for (const file of migrationFiles) {
+    logWithoutDB.info(mod, fun, 'Migration files: ' + migrationFiles.join(','))
+    logWithoutDB.info(mod, fun, 'Selected file: ' + file)
+
+    const currentVersion = Number.parseInt(file.substring(0, 3))
+    if (currentVersion <= lastVersion) {
+      logWithoutDB.debug(mod, fun, `Migration ${file} already executed, skipping`)
+      continue
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await runMigration(file, currentVersion)
+  }
+
+  logWithoutDB.info(mod, fun, 'All migrations executed successfully')
+  return true
 }
 
 // --- graceful closure ---
@@ -357,15 +361,19 @@ if (import.meta?.url && typeof process !== 'undefined') {
   // Défine import logic
   const isImported = typeof require === 'undefined'
 
-  const isDirectByImport = isImported && process.argv[1] && new URL(import.meta.url).pathname.endsWith(process.argv[1].split(/[\\/]/).pop())
+  const isDirectByImport =
+    isImported &&
+    process.argv[1] &&
+    new URL(import.meta.url).pathname.endsWith(process.argv[1].split(/[\\/]/).pop())
   const isDirectByRequire = !isImported && require.main === module
 
   const isDirect = isDirectByImport || isDirectByRequire
 
-  logWithoutDB.info(mod, 'executeMigrations', `isDirect: ${isDirect} 
-  - isImported: ${isImported} 
-  - isDirectByImport: ${isDirectByImport} 
-  - isDirectByRequire: ${isDirectByRequire}`)
+  logWithoutDB.info(
+    mod,
+    'executeMigrations',
+    `isDirect: ${isDirect} - isImported: ${isImported} - isDirectByImport: ${isDirectByImport} - isDirectByRequire: ${isDirectByRequire}`
+  )
 
   if (isDirect) {
     await executeMigrations()
