@@ -1,3 +1,5 @@
+import { searchOrganizations } from '../controllers/organizationController.js'
+
 const mod = 'routes'
 
 // -------------------------------------------------------------------------------------------------
@@ -86,6 +88,7 @@ import {
 import {
   addOrEditSingleReportForMetadata,
   addOrEditSingleReportForObject,
+  addOrEditSingleReportForOrganization,
   addSingleReportForObject,
   deleteEveryReportForObject,
   deleteManyReportForObject,
@@ -143,6 +146,7 @@ import {
   exposedCheckPortalToken,
   exposedGetPortalToken,
   getMetadata,
+  updateOrganizationFromPortal,
   sendAllMetadataToPortal,
   sendMetadata,
 } from '../controllers/portalController.js'
@@ -152,7 +156,7 @@ import {
   getPortalMetadataFields,
 } from '../controllers/stateController.js'
 import { test } from '../controllers/testController.js'
-import { getAllContacts, getAllOrganizations } from '../db/dbQueries.js'
+import { getAllContacts } from '../db/dbQueries.js'
 import {
   onPortalRoute,
   onPrivateRoute,
@@ -248,7 +252,7 @@ export const publicRoutes = [
     description: 'Access all organizations created on the RUDI producer node',
     method: 'GET',
     url: getPublicPath(OBJ_ORGANIZATIONS),
-    handler: getAllOrganizations,
+    handler: searchOrganizations,
     config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
   },
   {
@@ -357,6 +361,14 @@ export const portalRoutes = [
     url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, `${ACT_REPORT}`),
     handler: addOrEditSingleReportForMetadata,
     config: { [ROUTE_NAME]: 'portal_upsert_one_report' },
+  },
+  //Add/edit 1 report for one organization integration
+  {
+    description: 'Add/edit 1 report for one organization integration',
+    method: 'PUT',
+    url: getPublicPath(OBJ_ORGANIZATIONS, `:${PARAM_ID}`, `${ACT_REPORT}`),
+    handler: addOrEditSingleReportForOrganization,
+    config: { [ROUTE_NAME]: 'portal_put_org_report' },
   },
 
   // Get all reports for one object integration
@@ -916,6 +928,13 @@ export const devRoutes = [
     url: getPrivatePath(ACT_CHECK, URL_SUFFIX_PORTAL, 'ids'),
     handler: getPortalMetadataFields,
     config: { [ROUTE_NAME]: 'prv_check_portal_metadata_ids' },
+  },
+  {
+    description: 'Get organization from the Portal',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: updateOrganizationFromPortal,
+    config: { [ROUTE_NAME]: 'get_portal_organization' },
   },
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
