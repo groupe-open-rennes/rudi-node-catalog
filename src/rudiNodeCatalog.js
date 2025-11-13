@@ -1,3 +1,5 @@
+import UpdateFrequency from './definitions/thesaurus/UpdateFrequency.js'
+
 const mod = 'catalog.app'
 
 // -------------------------------------------------------------------------------------------------
@@ -188,6 +190,7 @@ const start = async () => {
     await Themes.initialize()
     await UpdateFrequencies.initialize()
     await getLicenceCodes()
+    await UpdateFrequency.initialize()
 
     separateLogs('Start', true) ////////////////////////////////////////////////////////////////////
     const startMsg = `API v${API_VERSION} | App version: '${getAppHash()}' | '${getEnvironment()}' env`

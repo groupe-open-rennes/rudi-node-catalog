@@ -1,3 +1,5 @@
+import updateFrequency from '../thesaurus/UpdateFrequency.js'
+
 const mod = 'metaSch'
 
 // -------------------------------------------------------------------------------------------------
@@ -29,7 +31,7 @@ import {
   API_DATA_DESCRIPTION_PROPERTY,
   API_DATA_DETAILS_PROPERTY,
   API_DATA_NAME_PROPERTY,
-  API_DATA_PRODUCER_PROPERTY,
+  API_DATA_PRODUCER_PROPERTY, API_DATA_UPDATE_FREQUENCY_PROPERTY,
   API_DATES_CREATED,
   API_DATES_DELETED,
   API_DATES_EDITED,
@@ -120,6 +122,8 @@ import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
 // logD(mod, 'init', 'Schemas, Models and definitions')
 import Keywords from '../thesaurus/Keywords.js'
 import Themes from '../thesaurus/Themes.js'
+import UpdateFrequency from '../thesaurus/UpdateFrequency.js'
+
 import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
 
 // import { get as getLicenceCodes } from '../thesaurus/LicenceCodes.js'
@@ -418,6 +422,10 @@ const MetadataSchema = new mongoose.Schema(
      * 'dataset_dates': Dates of the actions performed on the data (creation, publishing, update, deletion...)
      */
     [API_DATA_DATES_PROPERTY]: ReferenceDatesSchema,
+
+    [API_DATA_UPDATE_FREQUENCY_PROPERTY]: {
+      type: [String],
+    },
 
     // Status of the storage of the dataset
     // Metadata can exist without the data
@@ -758,6 +766,35 @@ async function checkThesaurus(metadata) {
         [API_STORAGE_STATUS]
       )
     }
+
+    logT(mod, fun, `dataset update frequency`)
+    const datasetUpdateFrequency = metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+    // logI(mod, fun, `datasetUpdateFrequency: ${beautify(datasetUpdateFrequency)}`)
+    if(datasetUpdateFrequency){
+      const datasetUpdateFrequencyStr = beautify(datasetUpdateFrequency)
+      if(datasetUpdateFrequencyStr === '' || datasetUpdateFrequencyStr === 'null') {
+        delete metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+      }
+      else {
+        await UpdateFrequency.isValid(datasetUpdateFrequency, true).then((isKnown) => {
+          if(isKnown) {
+            metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = datasetUpdateFrequency;
+            return true
+          }
+           else {
+             throw new BadRequestError(
+              incorrectVal(API_DATA_UPDATE_FREQUENCY_PROPERTY, datasetUpdateFrequency),
+              mod,
+              fun[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+             )
+          }
+        }).catch((err) => {
+          // logW(mod, fun, err)
+          throw RudiError.treatError(mod, fun, err)
+        })
+      }
+    }
+
     return true
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)

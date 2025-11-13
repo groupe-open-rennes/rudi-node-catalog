@@ -34,6 +34,7 @@ export const API_DATA_DESCRIPTION_PROPERTY = 'summary'
 export const API_DATA_PRODUCER_PROPERTY = 'producer'
 export const API_DATA_CONTACTS_PROPERTY = 'contacts'
 export const API_DATA_DATES_PROPERTY = 'dataset_dates'
+export const API_DATA_UPDATE_FREQUENCY_PROPERTY = 'dataset_update_frequency'
 
 // -------------------------------------------------------------------------------------------------
 // Metadata properties: media
