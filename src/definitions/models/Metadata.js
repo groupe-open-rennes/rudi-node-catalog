@@ -424,7 +424,8 @@ const MetadataSchema = new mongoose.Schema(
     [API_DATA_DATES_PROPERTY]: ReferenceDatesSchema,
 
     [API_DATA_UPDATE_FREQUENCY_PROPERTY]: {
-      type: [String],
+      type: String,
+      default: undefined,
     },
 
     // Status of the storage of the dataset
@@ -772,7 +773,7 @@ async function checkThesaurus(metadata) {
     // logI(mod, fun, `datasetUpdateFrequency: ${beautify(datasetUpdateFrequency)}`)
     if(datasetUpdateFrequency){
       const datasetUpdateFrequencyStr = beautify(datasetUpdateFrequency)
-      if(datasetUpdateFrequencyStr === '' || datasetUpdateFrequencyStr === 'null') {
+      if(datasetUpdateFrequencyStr === '' || datasetUpdateFrequencyStr === 'null' || datasetUpdateFrequencyStr === '0') {
         delete metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
       }
       else {
