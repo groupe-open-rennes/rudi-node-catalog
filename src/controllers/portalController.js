@@ -143,6 +143,22 @@ export const getPortalOrganization = async (req, reply) => {
   }
 }
 
+export const searchOrganizationsInPortal = async (req, reply) => {
+  const fun = 'getOrganizationsFromPortal'
+  logT(mod, fun)
+
+  const token = await getPortalToken()
+
+  try{
+    const additionalParameters = req.url?.split('?')[1]
+    logI(mod, fun, `additionalParameters: ${additionalParameters}`)
+
+    return await httpGet(getPortalOrganizationUrl('', additionalParameters), token)
+  }catch(err){
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
 export const createPortalOrganization = async (organization) => {
   const fun = 'createPortalOrganization'
   logT(mod, fun)

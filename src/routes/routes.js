@@ -146,9 +146,10 @@ import {
   exposedCheckPortalToken,
   exposedGetPortalToken,
   getPortalMetadata,
+  updateOrganizationFromPortal,
+  searchOrganizationsInPortal,
   sendAllMetadataToPortal,
   sendMetadata,
-  updateOrganizationFromPortal,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {
@@ -935,6 +936,13 @@ export const devRoutes = [
     url: getPrivatePath(URL_SUFFIX_PORTAL, OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
     handler: updateOrganizationFromPortal,
     config: { [ROUTE_NAME]: 'get_portal_organization' },
+  },
+  {
+    description: '',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, OBJ_ORGANIZATIONS),
+    handler: searchOrganizationsInPortal,
+    config: { [ROUTE_NAME]: 'get_portal_organizations' },
   },
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
