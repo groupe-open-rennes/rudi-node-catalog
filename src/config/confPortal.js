@@ -138,8 +138,10 @@ export const getPortalOrganizationUrl = (id, additionalParameters) => {
   return `${reqUrl}${options}`
 }
 
-export const isOrganizationAttachedUrl = (id) => {
-  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+export const organizationAttachRequestUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
   return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id))
 }
 
