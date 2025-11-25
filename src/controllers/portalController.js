@@ -1,3 +1,5 @@
+import { getPrivatePath } from '../config/confSystem.js'
+
 const mod = 'portalCtrl'
 
 // -------------------------------------------------------------------------------------------------
@@ -48,6 +50,7 @@ import {
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
   isOrganizationAttachedUrl,
+  organizationAttachRequestUrl,
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
@@ -200,7 +203,35 @@ export const isOrganizationAttached = async (req, reply) => {
     }
 
     logI(mod, fun, `organizationId: ${organizationId}`)
-    return await httpGet(isOrganizationAttachedUrl(organizationId), token)
+    return await httpGet(organizationAttachRequestUrl(organizationId), token)
+  } catch (err) {
+    // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const attachOrganization = async (req, reply) => {
+  const fun = 'attachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    return await httpPost(
+      organizationAttachRequestUrl(organizationId),
+      req.body,
+      await getPortalToken()
+    )
   } catch (err) {
     // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)

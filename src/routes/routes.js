@@ -150,6 +150,7 @@ import {
   searchOrganizationsInPortal,
   sendAllMetadataToPortal,
   sendMetadata,
+  attachOrganization,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {
@@ -938,11 +939,18 @@ export const devRoutes = [
     config: { [ROUTE_NAME]: 'get_portal_organization' },
   },
   {
-    description: '',
+    description: 'Search organizations in the Portal',
     method: 'GET',
     url: getPrivatePath(URL_SUFFIX_PORTAL, OBJ_ORGANIZATIONS),
     handler: searchOrganizationsInPortal,
     config: { [ROUTE_NAME]: 'get_portal_organizations' },
+  },
+  {
+    description: 'Request to attach organization to provider',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, 'attach', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: attachOrganization,
+    config: { [ROUTE_NAME]: 'post_portal_attach_organization' },
   },
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
