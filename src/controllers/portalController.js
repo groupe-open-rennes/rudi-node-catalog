@@ -49,7 +49,6 @@ import {
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
-  isOrganizationAttachedUrl,
   organizationAttachRequestUrl,
   isPortalConnectionDisabled,
   JWT_USER,
