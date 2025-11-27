@@ -176,7 +176,7 @@ export const createPortalOrganization = async (organization) => {
       return NO_PORTAL_MSG
     }
 
-    return await httpPost(getPortalOrganizationUrl(), organization, token)
+    return await httpPost(getPortalOrganizationUrl(), organization, token, {retries: 0})
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
@@ -229,7 +229,8 @@ export const attachOrganization = async (req, reply) => {
     return await httpPost(
       organizationAttachRequestUrl(organizationId),
       req.body,
-      await getPortalToken()
+      await getPortalToken(),
+        {retries: 0}
     )
   } catch (err) {
     // if (err.statusCode == 404) return null

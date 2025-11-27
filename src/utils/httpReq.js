@@ -108,11 +108,13 @@ export const getWithOpts = async (options, authorizationToken) => {
   }
 }
 
-export const httpPost = async (destUrl, dataToSend, authorizationToken) => {
+export const httpPost = async (destUrl, dataToSend, authorizationToken, reqOpts = {}) => {
   const fun = 'httpPost'
   try {
     logT(mod, fun)
-    const answer = await directPost(destUrl, dataToSend, getHeaders(authorizationToken))
+    const headers = getHeaders(authorizationToken)
+    reqOpts.headers = headers.headers
+    const answer = await directPost(destUrl, dataToSend, reqOpts)
 
     logD(mod, fun, `answer: ${beautify(answer.data)}`)
     return answer.data
@@ -121,11 +123,13 @@ export const httpPost = async (destUrl, dataToSend, authorizationToken) => {
   }
 }
 
-export const httpPut = async (destUrl, dataToSend, authorizationToken) => {
+export const httpPut = async (destUrl, dataToSend, authorizationToken, reqOpts = {}) => {
   const fun = 'httpPut'
   try {
     logT(mod, fun)
-    const answer = await directPut(destUrl, dataToSend, getHeaders(authorizationToken))
+    const headers = getHeaders(authorizationToken)
+    reqOpts.headers = headers.headers
+    const answer = await directPut(destUrl, dataToSend, reqOpts)
     logD(mod, fun, `answer: ${beautify(answer.data)}`)
     return answer.data
   } catch (err) {
@@ -203,9 +207,9 @@ const httpRequest = async (method, url, data = null, reqOpts = {}) => {
   logT(mod, fun)
 
   const {
-    timeout = REQ_TIMEOUT_MS,
-    retries = MAX_RETRIES,
-    delay = INITIAL_DELAY_MS,
+    timeout = reqOpts.timeout ?? REQ_TIMEOUT_MS,
+    retries = reqOpts.retries ?? MAX_RETRIES,
+    delay = reqOpts.delay ?? INITIAL_DELAY_MS,
     idempotencyKey = ['post', 'put', 'patch'].includes(method.toLowerCase())
       ? randomUUID()
       : undefined,
