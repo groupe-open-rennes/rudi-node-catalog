@@ -141,6 +141,7 @@ import { isPortalConnectionDisabled } from '../../config/confPortal.js'
 import { getPublicUrl } from '../../config/confSystem.js'
 import { getLicenceCodes } from '../../controllers/licenceController.js'
 import { VALID_API_VERSION, VALID_URI } from '../schemaValidators.js'
+import { UpdateFrequency } from '../thesaurus/UpdateFrequencies.js'
 import { isMediaMissing, isMimeTypePortalCompatible, MediaTypes } from './Media.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -408,6 +409,15 @@ const MetadataSchema = new mongoose.Schema(
         min: 0,
       },
     },
+    /**
+     * Indicative update frequency of the data
+     */
+    dataset_update_frequency: {
+      type: String,
+      enum: Object.values(UpdateFrequency),
+      required: false,
+    },
+
     /**
      * 'dataset_dates': Dates of the actions performed on the data (creation, publishing, update, deletion...)
      */

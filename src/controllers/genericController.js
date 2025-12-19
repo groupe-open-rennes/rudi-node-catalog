@@ -684,7 +684,9 @@ async function upsertSingleObject(inputObject, objectType, objectStandard, objec
   try {
     // Désactive la modification des objets de type Organisation
     // En attend le workflow de modification d'une organization côté Portail RUDI-5672
-    if (OBJ_ORGANIZATIONS !== objectType) {
+    if (!isPortalConnectionDisabled() && OBJ_ORGANIZATIONS === objectType) {
+      throw new NotImplementedError('Update of Organizations is temporarily deactivated')
+    } else {
       if (objectFormat === DEFAULT_OBJECT_FORMAT && objectStandard === DEFAULT_OBJECT_STANDARD) {
         rudiObject = inputObject
         logT(
