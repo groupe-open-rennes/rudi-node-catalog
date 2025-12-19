@@ -1,5 +1,3 @@
-import { searchOrganizations } from '../controllers/organizationController.js'
-
 const mod = 'routes'
 
 // -------------------------------------------------------------------------------------------------
@@ -52,6 +50,8 @@ import {
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
 import { logD } from '../utils/logging.js'
+
+import { searchOrganizations } from '../controllers/organizationController.js'
 
 // -------------------------------------------------------------------------------------------------
 // Swagger documentation
@@ -146,9 +146,9 @@ import {
   exposedCheckPortalToken,
   exposedGetPortalToken,
   getMetadata,
-  updateOrganizationFromPortal,
   sendAllMetadataToPortal,
   sendMetadata,
+  updateOrganizationFromPortal,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {

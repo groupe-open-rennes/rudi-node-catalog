@@ -415,7 +415,6 @@ const MetadataSchema = new mongoose.Schema(
     dataset_update_frequency: {
       type: String,
       enum: Object.values(UpdateFrequency),
-      required: false,
     },
 
     /**
