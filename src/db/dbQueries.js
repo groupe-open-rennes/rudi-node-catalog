@@ -1091,6 +1091,7 @@ export const overwriteDbObject = async (objectType, updateData) => {
     if (objectType == OBJ_METADATA) {
       logD(mod, fun, `findOneAndUpdate`)
       const dbObject = await ObjModel.findOneAndUpdate(filter, updateData, updateOpts)
+      // logD(mod, fun, beautify(dbObject, 2))
       await dbObject.save()
       return dbObject
     }

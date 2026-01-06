@@ -82,6 +82,7 @@ export const API_STORAGE_STATUS = 'storage_status'
 export const API_PERIOD_PROPERTY = 'temporal_spread'
 export const API_START_DATE_PROPERTY = 'start_date'
 export const API_END_DATE_PROPERTY = 'end_date'
+export const API_UPDATE_FREQUENCY = 'dataset_update_frequency'
 
 // -------------------------------------------------------------------------------------------------
 // Metadata properties: access condition / licence

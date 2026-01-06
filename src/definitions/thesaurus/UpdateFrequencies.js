@@ -77,4 +77,6 @@ const INIT_VALUES = {
 
 export const UpdateFrequencies = new Thesaurus(CODE, INIT_VALUES)
 
+export const isValid = (val) => UpdateFrequencies.isValid(val)
+
 export default UpdateFrequencies

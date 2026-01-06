@@ -74,6 +74,7 @@ import {
   API_STATUS_PROPERTY,
   API_STORAGE_STATUS,
   API_THEME_PROPERTY,
+  API_UPDATE_FREQUENCY,
   DB_CREATED_AT,
   DB_PUBLISHED_AT,
   DB_UPDATED_AT,
@@ -124,6 +125,7 @@ import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
 // import { get as getLicenceCodes } from '../thesaurus/LicenceCodes.js'
 import { isValid as isProjectionValid } from '../thesaurus/Projections.js'
 import { isValid as isStorageStatusValid, StorageStatus } from '../thesaurus/StorageStatus.js'
+import { isValid as isUpdateFrequenciesValid } from '../thesaurus/UpdateFrequencies.js'
 
 // -------------------------------------------------------------------------------------------------
 // Schema definitions
@@ -379,7 +381,7 @@ const MetadataSchema = new mongoose.Schema(
        *
        * Source: https://tools.ietf.org/html/rfc7946#section-3.1.1
        */
-      [API_GEO_GEOJSON_PROPERTY]: GeoJSON,
+      [API_GEO_GEOJSON_PROPERTY]: { type: GeoJSON, default: undefined },
 
       /**
        * 'projection': Cartographic projection used to describe the data
@@ -412,7 +414,7 @@ const MetadataSchema = new mongoose.Schema(
     /**
      * Indicative update frequency of the data
      */
-    dataset_update_frequency: {
+    [API_UPDATE_FREQUENCY]: {
       type: String,
       enum: Object.values(UpdateFrequency),
     },
@@ -761,6 +763,11 @@ async function checkThesaurus(metadata) {
         [API_STORAGE_STATUS]
       )
     }
+
+    // logT(mod, fun, `is dataset update freq valid`)
+    if (!isUpdateFrequenciesValid(metadata[API_UPDATE_FREQUENCY]))
+      metadata[API_UPDATE_FREQUENCY] = undefined
+
     return true
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
@@ -912,7 +919,16 @@ MetadataSchema.pre('save', async function () {
     logT(mod, fun)
     const metadata = this
     logT(mod, fun, `checking ${API_GEOGRAPHY}`)
+    logT(mod, fun, metadata[API_GEOGRAPHY])
     // If 'geography' field is defined, the field 'geography.bbox' is required
+    // if (
+    //   !metadata[API_GEOGRAPHY]?.[API_GEO_GEOJSON_PROPERTY] &&
+    //   !metadata[API_GEOGRAPHY]?.[API_GEO_BBOX_PROPERTY]
+    // ) {
+    //   metadata[API_GEOGRAPHY] = undefined
+    // }
+    // logT(mod, fun, metadata[API_GEOGRAPHY])
+
     if (requireSubProperty(metadata, API_GEOGRAPHY, API_GEO_BBOX_PROPERTY)) {
       if (isNothing(metadata[API_GEOGRAPHY][API_GEO_PROJECTION_PROPERTY])) {
         // If 'geography' field is defined, but 'geography.projection' is not, it is initialized to the default value.
@@ -963,7 +979,6 @@ MetadataSchema.pre('save', async function () {
       throw new BadRequestError(e.message, mod, fun, [API_METAINFO_DATES, API_DATES_EXPIRES])
     }
 
-    // Checking 'licence' field
     await checkLicence(metadata)
     await checkThesaurus(metadata)
     await checkFileTypes(metadata)
