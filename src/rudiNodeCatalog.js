@@ -44,6 +44,7 @@ import { launchRouteListener, shutDownListener } from './routes/fastify.js'
 import { addLogEntry, logE, logI, logT, logW, sysAlert, sysCrit, sysInfo } from './utils/logging.js'
 
 import './config/confPortal.js'
+import UpdateFrequencies from './definitions/thesaurus/UpdateFrequencies.js'
 import { RudiError } from './utils/errors.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -185,6 +186,7 @@ const start = async () => {
     separateLogs('Thesauri init', true) ////////////////////////////////////////////////////////////
     await Keywords.initialize()
     await Themes.initialize()
+    await UpdateFrequencies.initialize()
     await getLicenceCodes()
 
     separateLogs('Start', true) ////////////////////////////////////////////////////////////////////
