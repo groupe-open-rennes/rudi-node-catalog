@@ -522,6 +522,7 @@ export const getThesaurus = async (thesaurusCode) => {
     if (code === 'themes') return Themes.get()
     if (code === 'licences') return await getLicenceCodes()
     if (code === 'interfacecontracts') return Object.values(InterfaceContract)
+    if (code === 'updatefrequencies') return UpdateFrequencies.get()
 
     switch (code) {
       case 'encodings':
@@ -550,6 +551,7 @@ export const getThesaurusLabel = async (thesaurusCode, lang) => {
     const code = thesaurusCode.toLowerCase()
 
     if (code === 'themes') return Themes.getLabels(lang)
+    if (code === 'updatefrequencies') return UpdateFrequencies.get(lang)
 
     return await getThesaurus(thesaurusCode)
   } catch (err) {
