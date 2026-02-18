@@ -1,5 +1,3 @@
-import UpdateFrequency from './definitions/thesaurus/UpdateFrequency.js'
-
 const mod = 'catalog.app'
 
 // -------------------------------------------------------------------------------------------------
@@ -42,11 +40,12 @@ import { Metadata } from './definitions/models/Metadata.js'
 import { Organization } from './definitions/models/Organization.js'
 import Keywords from './definitions/thesaurus/Keywords.js'
 import Themes from './definitions/thesaurus/Themes.js'
+import UpdateFrequency from './definitions/thesaurus/UpdateFrequency.js'
+
 import { launchRouteListener, shutDownListener } from './routes/fastify.js'
 import { addLogEntry, logE, logI, logT, logW, sysAlert, sysCrit, sysInfo } from './utils/logging.js'
 
 import './config/confPortal.js'
-import UpdateFrequencies from './definitions/thesaurus/UpdateFrequencies.js'
 import { RudiError } from './utils/errors.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -188,7 +187,6 @@ const start = async () => {
     separateLogs('Thesauri init', true) ////////////////////////////////////////////////////////////
     await Keywords.initialize()
     await Themes.initialize()
-    await UpdateFrequencies.initialize()
     await getLicenceCodes()
     await UpdateFrequency.initialize()
 
