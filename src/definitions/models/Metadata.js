@@ -1,5 +1,3 @@
-import updateFrequency from '../thesaurus/UpdateFrequency.js'
-
 const mod = 'metaSch'
 
 // -------------------------------------------------------------------------------------------------
