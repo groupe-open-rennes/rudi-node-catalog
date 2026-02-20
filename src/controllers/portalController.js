@@ -75,6 +75,8 @@ import {
 } from '../utils/errors.js'
 import { createErrorReport } from './reportController.js'
 
+const defaultPortalRequestConfig = { retries: 0, timeout: 5000 }
+
 // -------------------------------------------------------------------------------------------------
 // Portal auth header
 // -------------------------------------------------------------------------------------------------
@@ -161,6 +163,7 @@ export const searchOrganizationsInPortal = async (req, reply) => {
   }
 }
 
+
 export const createPortalOrganization = async (organization) => {
   const fun = 'createPortalOrganization'
   logT(mod, fun)
@@ -176,7 +179,7 @@ export const createPortalOrganization = async (organization) => {
       return NO_PORTAL_MSG
     }
 
-    return await httpPost(getPortalOrganizationUrl(), organization, token, {retries: 0})
+    return await httpPost(getPortalOrganizationUrl(), organization, token, defaultPortalRequestConfig)
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
@@ -230,7 +233,7 @@ export const attachOrganization = async (req, reply) => {
       organizationAttachRequestUrl(organizationId),
       req.body,
       await getPortalToken(),
-        {retries: 0}
+      defaultPortalRequestConfig
     )
   } catch (err) {
     // if (err.statusCode == 404) return null
@@ -752,7 +755,7 @@ export const sendMetadataToPortal = async (metadataId) => {
       report.requestDetails = { method: 'POST', url: PORTAL_POST_URL }
       logD(mod, fun, report.step)
 
-      const postAnswer = await httpPost(PORTAL_POST_URL, portalReadyMetadata, portalToken)
+      const postAnswer = await httpPost(PORTAL_POST_URL, portalReadyMetadata, portalToken, defaultPortalRequestConfig)
       waitingMetadata[API_REPORT_ID] = isUUID(postAnswer) ? postAnswer : postAnswer.data
       return postAnswer
     }
