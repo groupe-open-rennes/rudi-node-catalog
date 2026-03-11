@@ -151,6 +151,8 @@ import {
   sendAllMetadataToPortal,
   sendMetadata,
   attachOrganization,
+  detachOrganization,
+  linkedProducerHasTask,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {
@@ -952,6 +954,21 @@ export const devRoutes = [
     handler: attachOrganization,
     config: { [ROUTE_NAME]: 'post_portal_attach_organization' },
   },
+  {
+    description: 'Request to detach organization to provider',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, 'detach', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: detachOrganization,
+    config: { [ROUTE_NAME]: 'post_portal_detach_organization' },
+  },
+  {
+    description: 'Request to detach organization to provider',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, 'has_task', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: linkedProducerHasTask,
+    config: { [ROUTE_NAME]: 'post_portal_detach_organization' },
+  },
+
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
   // -----------------------------------------------------------------------------------------------

@@ -145,6 +145,13 @@ export const organizationAttachRequestUrl = (id) => {
   return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id))
 }
 
+export const linkedProducerHasTaskUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
+  return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id), 'hasTask')
+}
+
 const apiGetUrlElements = getPortalMetaUrl().split('/')
 const API_GET_PROTOCOL = apiGetUrlElements[0].replace(/:/, '')
 const API_GET_PORT = API_GET_PROTOCOL === 'https' ? 443 : 80

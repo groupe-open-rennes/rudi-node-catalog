@@ -241,6 +241,64 @@ export const attachOrganization = async (req, reply) => {
   }
 }
 
+export const detachOrganization = async (req, reply) => {
+  const fun = 'attachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    return await httpDelete(
+      organizationAttachRequestUrl(organizationId),
+      req.body,
+      await getPortalToken(),
+      defaultPortalRequestConfig
+    )
+  } catch (err) {
+    // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const linkedProducerHasTask = async (req, reply) => {
+  const fun = 'attachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (!organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    return await httpGet(
+      linkedProducerHasTaskUrl(organizationId),
+      req.body,
+      await getPortalToken(),
+      defaultPortalRequestConfig
+    )
+  } catch (err) {
+    // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
 export const getPortalMetadata = async (req, reply) => {
   const fun = 'getPortalMetadata'
   logT(mod, fun)
