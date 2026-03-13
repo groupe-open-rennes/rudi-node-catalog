@@ -548,6 +548,14 @@ export const backOfficeRoutes = [
   },
   // Get all
   {
+    description: 'Get organizations for metadata form',
+    method: 'GET',
+    url: getPrivatePath(OBJ_ORGANIZATIONS, 'metadata'),
+    handler: searchOrganizations,
+    config: { [ROUTE_NAME]: 'prv_get_org_metadata' },
+  },
+  // Get all
+  {
     description: 'Get all objects',
     method: 'GET',
     url: getPrivatePath(`:${PARAM_OBJECT}`),
