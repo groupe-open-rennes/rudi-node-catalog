@@ -74,6 +74,9 @@ export const getPortalConf = (opt) => {
 // Extracting and exporting sys configuration
 // -------------------------------------------------------------------------------------------------
 const API_PORTAL_URL = getPortalUserConf('portal_url')
+const PORTAL_REQ_TIMEOUT = getPortalUserConf('portal_req_timeout') ?? 1000
+const PORTAL_MAX_RETRIES = getPortalUserConf('portal_max_retries') ?? 0
+const PORTAL_INITIAL_DELAY = getPortalUserConf('portal_initial_delay') ?? 100
 export const isPortalConnectionDisabled = () => !API_PORTAL_URL?.startsWith('http')
 
 // ----- Auth
@@ -128,6 +131,11 @@ export const getPortalMetaUrl = (id, additionalParameters) => {
   return `${reqUrl}${options}`
 }
 export const postPortalMetaUrl = (id) => pathJoin(API_PORTAL_URL, API_SEND_META_URL, id)
+export const defaultPortalRequestOptions = () => ({
+  reqTimeout : PORTAL_REQ_TIMEOUT,
+  retries : PORTAL_MAX_RETRIES,
+  delay : PORTAL_INITIAL_DELAY,
+})
 
 export const getPortalOrganizationUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
