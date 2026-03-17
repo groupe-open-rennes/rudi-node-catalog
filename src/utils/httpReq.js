@@ -72,11 +72,13 @@ const getHeaders = (jwt) => ({
   },
 })
 
-export const httpGet = async (destUrl, authorizationToken) => {
+export const httpGet = async (destUrl, authorizationToken, reqOpts = {}) => {
   const fun = 'httpGet'
   logT(mod, fun)
   try {
-    const answer = await directGet(destUrl, getHeaders(authorizationToken))
+    const headers = getHeaders(authorizationToken)
+    reqOpts.headers = headers.headers
+    const answer = await directGet(destUrl, reqOpts)
     // logD(mod, fun, `answer: ${beautify(answer.data)}`)
     return answer.data
   } catch (err) {
@@ -84,11 +86,13 @@ export const httpGet = async (destUrl, authorizationToken) => {
   }
 }
 
-export const httpDelete = async (destUrl, authorizationToken) => {
+export const httpDelete = async (destUrl, authorizationToken, reqOpts = {}) => {
   const fun = 'httpDelete'
   try {
     logT(mod, fun)
-    const answer = await axios.delete(destUrl, getHeaders(authorizationToken))
+    const headers = getHeaders(authorizationToken)
+    reqOpts.headers = headers.headers
+    const answer = await axios.delete(destUrl, reqOpts)
     logD(mod, fun, `answer: ${beautify(answer.data)}`)
     return answer.data
   } catch (err) {
