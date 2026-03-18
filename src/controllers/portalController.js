@@ -50,6 +50,7 @@ import {
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
   organizationAttachRequestUrl,
+  linkedProducerHasTaskUrl,
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
@@ -109,7 +110,13 @@ export const updateOrganizationFromPortal = async (req, reply) => {
     if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
     let portalOrganization = await getPortalOrganization(req, reply)
-    let isAttached = await isOrganizationAttached(req, reply)
+    let attachRequest = null
+    try {
+      attachRequest = await isOrganizationAttached(req, reply)
+    } catch (err) {
+      // After a detach, the request may no longer exist (404) or a BPMN task is already running (409)
+      if (err?.statusCode !== 404 && err?.statusCode !== 409) throw err
+    }
 
     logT(mod, fun, portalOrganization)
 
@@ -117,7 +124,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
       let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization, isAttached)
+        updateOrganization(organization, portalOrganization, attachRequest)
 
         organization.save()
       }
@@ -242,7 +249,7 @@ export const attachOrganization = async (req, reply) => {
 }
 
 export const detachOrganization = async (req, reply) => {
-  const fun = 'attachOrganization'
+  const fun = 'detachOrganization'
   logT(mod, fun)
   try {
     if (isPortalConnectionDisabled()) {
@@ -258,20 +265,23 @@ export const detachOrganization = async (req, reply) => {
     }
 
     logI(mod, fun, `organizationId: ${organizationId}`)
-    return await httpDelete(
-      organizationAttachRequestUrl(organizationId),
-      req.body,
-      await getPortalToken(),
-      defaultPortalRequestConfig
-    )
+    try {
+      const result = await httpDelete(organizationAttachRequestUrl(organizationId), await getPortalToken())
+      // Refresh the local organization status from portal after successful detach
+      await updateOrganizationFromPortal(req, reply)
+      return result
+    } catch (err) {
+      // 409 means a task is already pending — propagate as-is so the front can display a warning
+      if (err?.statusCode === 409) throw RudiError.createRudiHttpError(409, err.message, mod, fun)
+      throw err
+    }
   } catch (err) {
-    // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)
   }
 }
 
 export const linkedProducerHasTask = async (req, reply) => {
-  const fun = 'attachOrganization'
+  const fun = 'linkedProducerHasTask'
   logT(mod, fun)
   try {
     if (isPortalConnectionDisabled()) {
@@ -279,7 +289,7 @@ export const linkedProducerHasTask = async (req, reply) => {
     }
 
     let organizationId = req.params[PARAM_ID]
-    if (!organizationId && !isUUID(organizationId)) {
+    if (organizationId && !isUUID(organizationId)) {
       organizationId = undefined
     }
     if (organizationId) {
@@ -287,14 +297,14 @@ export const linkedProducerHasTask = async (req, reply) => {
     }
 
     logI(mod, fun, `organizationId: ${organizationId}`)
-    return await httpGet(
-      linkedProducerHasTaskUrl(organizationId),
-      req.body,
-      await getPortalToken(),
-      defaultPortalRequestConfig
-    )
+    try {
+      return await httpGet(linkedProducerHasTaskUrl(organizationId), await getPortalToken())
+    } catch (err) {
+      // 404 means no pending task for this organization — return false instead of throwing
+      if (err?.statusCode === 404) return false
+      throw err
+    }
   } catch (err) {
-    // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)
   }
 }
@@ -630,7 +640,7 @@ export const verifyPortalTokenSign = async (jwt) => {
       logI(mod, fun, msg)
       const cachedPub = _cachedPortalJwtPubs[keyId]?.key?.n
       const portalPub = portalPubKeys.find((key) => key.kid == keyId)?.n
-      if (cachedPub != portalPub)
+    if (cachedPub != portalPub)
         logW(mod, fun, `Portal pub \n'${portalPub}'\n ≠ Cached pub \n'${cachedPub}'`)
     } else {
       logD(mod, fun, `cached keys: ${beautify(_cachedPortalJwtPubs)}`)
@@ -930,9 +940,15 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganziation, isAttached) {
+function updateOrganization(organization, portalOrganziation, attachRequest) {
   organization.organization_status = portalOrganziation.organization_status
-  organization.linked_producer_status = isAttached ? 'VALIDATED' : undefined
+  // Use the actual status from the attach request response, or from the portal org, or boolean fallback
+  organization.linked_producer_status =
+  // nom propriété ?
+    attachRequest?.linked_producer_status ??
+    attachRequest?.linkedProducerStatus ??
+    portalOrganziation?.linked_producer_status ??
+    (attachRequest ? 'VALIDATED' : undefined)
 
   if (
     Date.parse(organization.updatedAt) <

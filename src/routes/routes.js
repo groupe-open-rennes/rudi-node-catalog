@@ -546,7 +546,7 @@ export const backOfficeRoutes = [
     handler: upsertObjects,
     config: { [ROUTE_NAME]: 'prv_upsert_one' },
   },
-  // Get all
+   // Get all
   {
     description: 'Get organizations for metadata form',
     method: 'GET',
@@ -970,13 +970,12 @@ export const devRoutes = [
     config: { [ROUTE_NAME]: 'post_portal_detach_organization' },
   },
   {
-    description: 'Request to detach organization to provider',
+    description: 'Check if organization has a pending task',
     method: 'GET',
     url: getPrivatePath(URL_SUFFIX_PORTAL, 'has_task', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
     handler: linkedProducerHasTask,
-    config: { [ROUTE_NAME]: 'post_portal_detach_organization' },
+    config: { [ROUTE_NAME]: 'post_portal_has_task_organization' },
   },
-
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data
   // -----------------------------------------------------------------------------------------------
