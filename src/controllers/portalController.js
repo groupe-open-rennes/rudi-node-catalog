@@ -110,13 +110,6 @@ export const updateOrganizationFromPortal = async (req, reply) => {
     if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
     let portalOrganization = await getPortalOrganization(req, reply)
-    let attachRequest = null
-    try {
-      attachRequest = await isOrganizationAttached(req, reply)
-    } catch (err) {
-      // After a detach, the request may no longer exist (404) or a BPMN task is already running (409)
-      if (err?.statusCode !== 404 && err?.statusCode !== 409) throw err
-    }
 
     logT(mod, fun, portalOrganization)
 
@@ -124,7 +117,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
       let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization, attachRequest)
+        updateOrganization(organization, portalOrganization)
 
         organization.save()
       }
@@ -940,27 +933,23 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganziation, attachRequest) {
-  organization.organization_status = portalOrganziation.organization_status
-  // Use the actual status from the attach request response, or from the portal org, or boolean fallback
-  organization.linked_producer_status =
-  // nom propriété ?
-    attachRequest?.linked_producer_status ??
-    attachRequest?.linkedProducerStatus ??
-    portalOrganziation?.linked_producer_status ??
-    (attachRequest ? 'VALIDATED' : undefined)
+function updateOrganization(organization, portalOrganization) {
+  organization.organization_status = portalOrganization.organization_status
+  organization.linked_producer_status = portalOrganization.linked_producer_status ?? undefined
 
   if (
     Date.parse(organization.updatedAt) <
-    Date.parse(portalOrganziation?.organization_dates?.modified)
+    Date.parse(portalOrganization?.organization_dates?.modified)
   ) {
-    organization.organization_name = portalOrganziation.organization_name
+    organization.organization_name = portalOrganization.organization_name
 
-    if (portalOrganziation.organization_summary) {
-      organization.organization_summary = portalOrganziation.organization_summary
+    organization.updatedAt = portalOrganization.organization_dates.modified
+
+    if (portalOrganization.organization_summary) {
+      organization.organization_summary = portalOrganization.organization_summary
     }
-    if (portalOrganziation.organization_address) {
-      organization.organization_address = portalOrganziation.organization_address
+    if (portalOrganization.organization_address) {
+      organization.organization_address = portalOrganization.organization_address
     }
   }
 
