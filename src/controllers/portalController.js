@@ -935,7 +935,7 @@ export const exposedCheckPortalToken = async (req, reply) => {
 
 function updateOrganization(organization, portalOrganization) {
   organization.organization_status = portalOrganization.organization_status
-  organization.linked_producer_status = portalOrganization.linked_producer_status ?? undefined
+  organization.linked_producer_status = portalOrganization.linked_producer_status ?? organization.linked_producer_status
 
   if (
     Date.parse(organization.updatedAt) <
