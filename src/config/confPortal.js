@@ -121,6 +121,7 @@ const API_SEND_META_URL = getPortalConf('put_meta_url')
 // const API_SEND_ORG_URL = getPortalConf('put_org_url')
 const API_GET_ORG_URL = getPortalConf('get_org_url')
 const API_GET_LINKED_PRODUCER_URL = getPortalConf('get_linked_producer_url')
+const API_DETACH_LINKED_PRODUCER_URL = getPortalConf('detach_linked_producer_url')
 
 export const getPortalMetaUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
@@ -151,6 +152,20 @@ export const organizationAttachRequestUrl = (id) => {
     return NO_PORTAL_MSG
   }
   return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id))
+}
+
+export const linkedProducerHasTaskUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
+  return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id), 'hasTask')
+}
+
+export const detachOrganizationUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
+  return pathJoin(API_PORTAL_URL, API_DETACH_LINKED_PRODUCER_URL.replace('{{id}}', id))
 }
 
 const apiGetUrlElements = getPortalMetaUrl().split('/')

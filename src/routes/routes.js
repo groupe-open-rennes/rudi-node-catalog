@@ -151,6 +151,8 @@ import {
   sendAllMetadataToPortal,
   sendMetadata,
   attachOrganization,
+  detachOrganization,
+  linkedProducerHasTask,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {
@@ -543,6 +545,14 @@ export const backOfficeRoutes = [
     url: getPrivatePath(`:${PARAM_OBJECT}`),
     handler: upsertObjects,
     config: { [ROUTE_NAME]: 'prv_upsert_one' },
+  },
+   // Get all
+  {
+    description: 'Get organizations for metadata form',
+    method: 'GET',
+    url: getPrivatePath(OBJ_ORGANIZATIONS, 'metadata'),
+    handler: searchOrganizations,
+    config: { [ROUTE_NAME]: 'prv_get_org_metadata' },
   },
   // Get all
   {
@@ -951,6 +961,20 @@ export const devRoutes = [
     url: getPrivatePath(URL_SUFFIX_PORTAL, 'attach', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
     handler: attachOrganization,
     config: { [ROUTE_NAME]: 'post_portal_attach_organization' },
+  },
+  {
+    description: 'Request to detach organization to provider',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, 'detach', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: detachOrganization,
+    config: { [ROUTE_NAME]: 'post_portal_detach_organization' },
+  },
+  {
+    description: 'Check if organization has a pending task',
+    method: 'GET',
+    url: getPrivatePath(URL_SUFFIX_PORTAL, 'has_task', OBJ_ORGANIZATIONS, `:${PARAM_ID}`),
+    handler: linkedProducerHasTask,
+    config: { [ROUTE_NAME]: 'post_portal_has_task_organization' },
   },
   // -----------------------------------------------------------------------------------------------
   //  Monitoring/control checks on metadata/data

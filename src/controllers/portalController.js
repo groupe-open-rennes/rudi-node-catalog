@@ -43,6 +43,8 @@ import {
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
+  organizationAttachRequestUrl,
+  linkedProducerHasTaskUrl,
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
@@ -105,7 +107,6 @@ export const updateOrganizationFromPortal = async (req, reply) => {
     if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
     let portalOrganization = await getPortalOrganization(req, reply)
-    let isAttached = await isOrganizationAttached(req, reply)
 
     logT(mod, fun, portalOrganization)
 
@@ -113,7 +114,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
       let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization, isAttached)
+        updateOrganization(organization, portalOrganization)
 
         organization.save()
       }
@@ -250,6 +251,67 @@ export const attachOrganization = async (req, reply) => {
     )
   } catch (err) {
     // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const detachOrganization = async (req, reply) => {
+  const fun = 'detachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    try {
+      const result = await httpDelete(organizationAttachRequestUrl(organizationId), await getPortalToken())
+      // Refresh the local organization status from portal after successful detach
+      await updateOrganizationFromPortal(req, reply)
+      return result
+    } catch (err) {
+      // 409 means a task is already pending — propagate as-is so the front can display a warning
+      if (err?.statusCode === 409) throw RudiError.createRudiHttpError(409, err.message, mod, fun)
+      throw err
+    }
+  } catch (err) {
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const linkedProducerHasTask = async (req, reply) => {
+  const fun = 'linkedProducerHasTask'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    try {
+      return await httpGet(linkedProducerHasTaskUrl(organizationId), await getPortalToken())
+    } catch (err) {
+      // 404 means no pending task for this organization — return false instead of throwing
+      if (err?.statusCode === 404) return false
+      throw err
+    }
+  } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
 }
@@ -585,7 +647,7 @@ export const verifyPortalTokenSign = async (jwt) => {
       logI(mod, fun, msg)
       const cachedPub = _cachedPortalJwtPubs[keyId]?.key?.n
       const portalPub = portalPubKeys.find((key) => key.kid == keyId)?.n
-      if (cachedPub != portalPub)
+    if (cachedPub != portalPub)
         logW(mod, fun, `Portal pub \n'${portalPub}'\n ≠ Cached pub \n'${cachedPub}'`)
     } else {
       logD(mod, fun, `cached keys: ${beautify(_cachedPortalJwtPubs)}`)
@@ -910,21 +972,23 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganziation, isAttached) {
-  organization.organization_status = portalOrganziation.organization_status
-  organization.linked_producer_status = isAttached ? 'VALIDATED' : undefined
+function updateOrganization(organization, portalOrganization) {
+  organization.organization_status = portalOrganization.organization_status
+  organization.linked_producer_status = portalOrganization.linked_producer_status ?? organization.linked_producer_status
 
   if (
     Date.parse(organization.updatedAt) <
-    Date.parse(portalOrganziation?.organization_dates?.modified)
+    Date.parse(portalOrganization?.organization_dates?.modified)
   ) {
-    organization.organization_name = portalOrganziation.organization_name
+    organization.organization_name = portalOrganization.organization_name
 
-    if (portalOrganziation.organization_summary) {
-      organization.organization_summary = portalOrganziation.organization_summary
+    organization.updatedAt = portalOrganization.organization_dates.modified
+
+    if (portalOrganization.organization_summary) {
+      organization.organization_summary = portalOrganization.organization_summary
     }
-    if (portalOrganziation.organization_address) {
-      organization.organization_address = portalOrganziation.organization_address
+    if (portalOrganization.organization_address) {
+      organization.organization_address = portalOrganization.organization_address
     }
   }
 
