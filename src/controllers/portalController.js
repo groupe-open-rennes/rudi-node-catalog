@@ -48,7 +48,6 @@ import {
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
-  organizationAttachRequestUrl,
   postPortalMetaUrl,
 } from '../config/confPortal.js'
 import { directPost, httpDelete, httpGet, httpPost, httpPut } from '../utils/httpReq.js'
