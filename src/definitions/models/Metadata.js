@@ -630,14 +630,14 @@ async function checkFileTypes(metadata) {
     medias.map((media, i) => {
       if (media[API_MEDIA_TYPE] !== MediaTypes.File) return
 
-      const [mimeType, encrypted] = /^(.*?)(\+crypt)?$/.exec(media[API_FILE_MIME])
+      const [, mimeType, encrypted] = /^(.*?)(\+crypt)?$/.exec(media[API_FILE_MIME])
       // Backward compatibility for harvesters
       if (mimeType === MIME_YAML_ALT) {
-        media[API_FILE_MIME] = MIME_YAML + encrypted
+        media[API_FILE_MIME] = MIME_YAML + (encrypted ?? '')
         return true
       }
       if (mimeType === MIME_MARKDOWN_ALT) {
-        media[API_FILE_MIME] = MIME_MARKDOWN + encrypted
+        media[API_FILE_MIME] = MIME_MARKDOWN + (encrypted ?? '')
         return true
       }
       const fileTypes = getFileTypes()
