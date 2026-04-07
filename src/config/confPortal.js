@@ -74,6 +74,9 @@ export const getPortalConf = (opt) => {
 // Extracting and exporting sys configuration
 // -------------------------------------------------------------------------------------------------
 const API_PORTAL_URL = getPortalUserConf('portal_url')
+const PORTAL_REQ_TIMEOUT = getPortalUserConf('portal_req_timeout') ?? 1000
+const PORTAL_MAX_RETRIES = getPortalUserConf('portal_max_retries') ?? 0
+const PORTAL_INITIAL_DELAY = getPortalUserConf('portal_initial_delay') ?? 100
 export const isPortalConnectionDisabled = () => !API_PORTAL_URL?.startsWith('http')
 
 // ----- Auth
@@ -118,6 +121,7 @@ const API_SEND_META_URL = getPortalConf('put_meta_url')
 // const API_SEND_ORG_URL = getPortalConf('put_org_url')
 const API_GET_ORG_URL = getPortalConf('get_org_url')
 const API_GET_LINKED_PRODUCER_URL = getPortalConf('get_linked_producer_url')
+const API_DETACH_LINKED_PRODUCER_URL = getPortalConf('detach_linked_producer_url')
 
 export const getPortalMetaUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
@@ -128,6 +132,11 @@ export const getPortalMetaUrl = (id, additionalParameters) => {
   return `${reqUrl}${options}`
 }
 export const postPortalMetaUrl = (id) => pathJoin(API_PORTAL_URL, API_SEND_META_URL, id)
+export const defaultPortalRequestOptions = () => ({
+  reqTimeout : PORTAL_REQ_TIMEOUT,
+  retries : PORTAL_MAX_RETRIES,
+  delay : PORTAL_INITIAL_DELAY,
+})
 
 export const getPortalOrganizationUrl = (id, additionalParameters) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
@@ -138,9 +147,25 @@ export const getPortalOrganizationUrl = (id, additionalParameters) => {
   return `${reqUrl}${options}`
 }
 
-export const isOrganizationAttachedUrl = (id) => {
-  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+export const organizationAttachRequestUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
   return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id))
+}
+
+export const linkedProducerHasTaskUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
+  return pathJoin(API_PORTAL_URL, API_GET_LINKED_PRODUCER_URL.replace('{{id}}', id), 'hasTask')
+}
+
+export const detachOrganizationUrl = (id) => {
+  if (isPortalConnectionDisabled()) {
+    return NO_PORTAL_MSG
+  }
+  return pathJoin(API_PORTAL_URL, API_DETACH_LINKED_PRODUCER_URL.replace('{{id}}', id))
 }
 
 const apiGetUrlElements = getPortalMetaUrl().split('/')

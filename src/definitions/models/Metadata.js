@@ -1,4 +1,5 @@
 const mod = 'metaSch'
+
 // -------------------------------------------------------------------------------------------------
 // External dependencies
 // -------------------------------------------------------------------------------------------------
@@ -19,7 +20,6 @@ import {
   PORTAL_API_VERSION,
   URL_PREFIX_PUBLIC,
 } from '../../config/constApi.js'
-
 import {
   API_ACCESS_CONDITION,
   API_COLLECTION_TAG,
@@ -29,7 +29,7 @@ import {
   API_DATA_DESCRIPTION_PROPERTY,
   API_DATA_DETAILS_PROPERTY,
   API_DATA_NAME_PROPERTY,
-  API_DATA_PRODUCER_PROPERTY,
+  API_DATA_PRODUCER_PROPERTY, API_DATA_UPDATE_FREQUENCY_PROPERTY,
   API_DATES_CREATED,
   API_DATES_DELETED,
   API_DATES_EDITED,
@@ -74,7 +74,6 @@ import {
   API_STATUS_PROPERTY,
   API_STORAGE_STATUS,
   API_THEME_PROPERTY,
-  API_UPDATE_FREQUENCY,
   DB_CREATED_AT,
   DB_PUBLISHED_AT,
   DB_UPDATED_AT,
@@ -85,6 +84,7 @@ import {
 } from '../../db/dbFields.js'
 
 import { Latitude, Longitude } from '../schemas/GpsCoordinates.js'
+
 import {
   get as getFileTypes,
   MIME_MARKDOWN,
@@ -96,20 +96,20 @@ import {
 // -------------------------------------------------------------------------------------------------
 // Validators
 // -------------------------------------------------------------------------------------------------
-
 const validArrayNotNull = {
   validator: isNotEmptyArray,
   message: `'{PATH}' property should not be empty`,
 }
 
+
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
 import { beautify, isNotEmptyArray, isNothing, multiSplit } from '../../utils/jsUtils.js'
-
 import { logD, logE, logI, logT, logV, logW } from '../../utils/logging.js'
 
 import { makeSearchable } from '../../db/dbActions.js'
+
 import { BadRequestError, NotFoundError, RudiError } from '../../utils/errors.js'
 import { accessProperty, requireSubProperty } from '../../utils/jsonAccess.js'
 import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
@@ -120,21 +120,23 @@ import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
 // logD(mod, 'init', 'Schemas, Models and definitions')
 import Keywords from '../thesaurus/Keywords.js'
 import Themes from '../thesaurus/Themes.js'
+import UpdateFrequency from '../thesaurus/UpdateFrequency.js'
 
 import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
+
 // import { get as getLicenceCodes } from '../thesaurus/LicenceCodes.js'
 import { isValid as isProjectionValid } from '../thesaurus/Projections.js'
 import { isValid as isStorageStatusValid, StorageStatus } from '../thesaurus/StorageStatus.js'
-import { isValid as isUpdateFrequenciesValid } from '../thesaurus/UpdateFrequencies.js'
 
 // -------------------------------------------------------------------------------------------------
 // Schema definitions
 // -------------------------------------------------------------------------------------------------
 import { DoiSchema, UuidSchema, UuidV4Schema } from '../schemas/Identifiers.js'
-
 import { AccessConditionSchema } from '../schemas/AccessConditions.js'
+
 import { DictionaryEntrySchema } from '../schemas/DictionaryEntry.js'
 import { checkDates, ReferenceDatesSchema } from '../schemas/ReferenceDates.js'
+import { RichDictionaryEntrySchema } from '../schemas/RichDictionaryEntry.js'
 
 // -------------------------------------------------------------------------------------------------
 // Model definitions
@@ -143,7 +145,6 @@ import { isPortalConnectionDisabled } from '../../config/confPortal.js'
 import { getPublicUrl } from '../../config/confSystem.js'
 import { getLicenceCodes } from '../../controllers/licenceController.js'
 import { VALID_API_VERSION, VALID_URI } from '../schemaValidators.js'
-import { UpdateFrequency } from '../thesaurus/UpdateFrequencies.js'
 import { isMediaMissing, isMimeTypePortalCompatible, MediaTypes } from './Media.js'
 
 // -------------------------------------------------------------------------------------------------
@@ -243,7 +244,7 @@ const MetadataSchema = new mongoose.Schema(
 
     /** 'summary': more precise description for the whole dataset */
     [API_DATA_DESCRIPTION_PROPERTY]: {
-      type: [DictionaryEntrySchema],
+      type: [RichDictionaryEntrySchema],
       required: true,
       validate: validArrayNotNull,
       _id: false,
@@ -416,17 +417,14 @@ const MetadataSchema = new mongoose.Schema(
       },
     },
     /**
-     * Indicative update frequency of the data
-     */
-    [API_UPDATE_FREQUENCY]: {
-      type: String,
-      enum: Object.values(UpdateFrequency),
-    },
-
-    /**
      * 'dataset_dates': Dates of the actions performed on the data (creation, publishing, update, deletion...)
      */
     [API_DATA_DATES_PROPERTY]: ReferenceDatesSchema,
+
+    [API_DATA_UPDATE_FREQUENCY_PROPERTY]: {
+      type: String,
+      default: undefined,
+    },
 
     // Status of the storage of the dataset
     // Metadata can exist without the data
@@ -632,14 +630,14 @@ async function checkFileTypes(metadata) {
     medias.map((media, i) => {
       if (media[API_MEDIA_TYPE] !== MediaTypes.File) return
 
-      const [mimeType, encrypted] = /^(.*?)(\+crypt)?$/.exec(media[API_FILE_MIME])
+      const [, mimeType, encrypted] = /^(.*?)(\+crypt)?$/.exec(media[API_FILE_MIME])
       // Backward compatibility for harvesters
       if (mimeType === MIME_YAML_ALT) {
-        media[API_FILE_MIME] = MIME_YAML + encrypted
+        media[API_FILE_MIME] = MIME_YAML + (encrypted ?? '')
         return true
       }
       if (mimeType === MIME_MARKDOWN_ALT) {
-        media[API_FILE_MIME] = MIME_MARKDOWN + encrypted
+        media[API_FILE_MIME] = MIME_MARKDOWN + (encrypted ?? '')
         return true
       }
       const fileTypes = getFileTypes()
@@ -768,12 +766,33 @@ async function checkThesaurus(metadata) {
       )
     }
 
-    logT(mod, fun, `is dataset update freq valid`)
-    if (
-      !metadata[API_UPDATE_FREQUENCY] ||
-      !isUpdateFrequenciesValid(metadata[API_UPDATE_FREQUENCY])
-    )
-      metadata[API_UPDATE_FREQUENCY] = undefined
+    logT(mod, fun, `dataset update frequency`)
+    const datasetUpdateFrequency = metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+    // logI(mod, fun, `datasetUpdateFrequency: ${beautify(datasetUpdateFrequency)}`)
+    if(datasetUpdateFrequency){
+      const datasetUpdateFrequencyStr = beautify(datasetUpdateFrequency)
+      if(datasetUpdateFrequencyStr === '' || datasetUpdateFrequencyStr === 'null' || datasetUpdateFrequencyStr === '0') {
+        delete metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+      }
+      else {
+        await UpdateFrequency.isValid(datasetUpdateFrequency, true).then((isKnown) => {
+          if(isKnown) {
+            metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = datasetUpdateFrequency;
+            return true
+          }
+           else {
+             throw new BadRequestError(
+              incorrectVal(API_DATA_UPDATE_FREQUENCY_PROPERTY, datasetUpdateFrequency),
+              mod,
+              fun[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+             )
+          }
+        }).catch((err) => {
+          // logW(mod, fun, err)
+          throw RudiError.treatError(mod, fun, err)
+        })
+      }
+    }
 
     return true
   } catch (err) {
