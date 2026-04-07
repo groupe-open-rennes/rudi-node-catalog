@@ -144,11 +144,10 @@ export const setPublishedFlag = async (dbObject, rudiId) => {
     if (!dbObject[DB_PUBLISHED_AT]) {
       dbObject[DB_PUBLISHED_AT] = nowISO()
       logD(mod, fun, `dbObject published: ${logMetadata(dbObject)}`)
+      await dbObject.save()
     } else {
-      logI(mod, fun, `Data had already been published for id '${rudiId}', updating status`)
+      logI(mod, fun, `Data had already been published for id '${rudiId}', no update needed`)
     }
-    // Always save so the Mongoose hook updates metadata_status to 'published'
-    await dbObject.save()
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
