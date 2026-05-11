@@ -59,6 +59,7 @@ import { getDbObjectList, getObjectWithRudiId } from '../db/dbQueries.js'
 
 import { createPublicKey } from 'node:crypto'
 import { isEveryMediaAvailable, setMetadataStatusToSent } from '../definitions/models/Metadata.js'
+import { ObjectTypes } from '../definitions/models/Report.js'
 import {
   BadRequestError,
   ForbiddenError,
@@ -761,7 +762,7 @@ const isMetadataSendableToPortal = async (metadataId) => {
 const PORTAL_POST_URL = postPortalMetaUrl()
 export const sendMetadataToPortal = async (metadataId) => {
   const fun = 'sendMetadataToPortal'
-  const report = { step: 'initializing' }
+  const report = { step: 'initializing', metadata: { [API_METADATA_ID]: metadataId } }
 
   try {
     logT(mod, fun)
@@ -801,7 +802,13 @@ export const sendMetadataToPortal = async (metadataId) => {
         portalToken,
         defaultPortalRequestOptions()
       )
-    } catch {
+    } catch (err) {
+      // Only treat 404 as "metadata not found on portal" → POST
+      // Any other error (timeout, network, 5xx…) should be re-thrown
+      if (err?.statusCode !== 404 && err?.response?.status !== 404) {
+        throw err
+      }
+
       report.step = `sending a metadata that is not on the portal: '${metadataId}'`
       report.requestDetails = { method: 'POST', url: PORTAL_POST_URL }
       logD(mod, fun, report.step)
@@ -837,6 +844,7 @@ export const sendMetadataToPortal = async (metadataId) => {
   } catch (err) {
     logW(mod, fun, beautify(err))
     report.description = 'An error occurred while sending the metadata to the Portal'
+    report.objectType = ObjectTypes.DATASET
     await createErrorReport(err, report, 'update metadata status')
     throw RudiError.treatError(mod, fun, err)
   }

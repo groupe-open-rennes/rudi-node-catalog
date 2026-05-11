@@ -52,6 +52,7 @@ import {
   API_REPORT_ERROR_MSG,
   API_REPORT_ID,
   API_REPORT_METHOD,
+  API_REPORT_OBJECT_TYPE,
   API_REPORT_RESOURCE_ID,
   API_REPORT_STATUS,
   API_REPORT_SUBMISSION_DATE,
@@ -479,7 +480,7 @@ export const getReportListForObjectType = async (req, reply) => {
 export const createErrorReport = async (err, details, shouldUpdateMetadataStatus) => {
   const fun = 'createErrorReport'
   if (!details) throw new InternalServerError('Input details should not be null', mod, fun)
-  const { step, description, method, url, metadata } = details
+  const { step, description, method, url, metadata, objectType } = details
 
   const metaId = metadata?.[API_METADATA_ID]
   const reportId = uuidv4()
@@ -493,6 +494,7 @@ export const createErrorReport = async (err, details, shouldUpdateMetadataStatus
       [API_REPORT_METHOD]: method?.toUpperCase(),
       [API_REPORT_VERSION]: API_VERSION,
       [API_REPORT_STATUS]: IntegrationStatus.KO,
+      [API_REPORT_OBJECT_TYPE]: objectType,
       [API_REPORT_COMMENT]: `While ${step}` + url ? `on ${url}` : '',
       [API_REPORT_ERRORS]: {
         [API_REPORT_ERROR_CODE]: err?.statusCode || 500,
