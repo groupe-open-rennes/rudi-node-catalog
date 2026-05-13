@@ -1,5 +1,3 @@
-const mod = 'portalCtrl'
-
 // -------------------------------------------------------------------------------------------------
 // External dependencies
 // -------------------------------------------------------------------------------------------------
@@ -8,9 +6,6 @@ import axios from 'axios'
 import https from 'node:https'
 
 import _ from 'lodash'
-
-const { pick } = _
-
 // -------------------------------------------------------------------------------------------------
 // Constants
 // -------------------------------------------------------------------------------------------------
@@ -38,6 +33,7 @@ import { beautify, dateEpochSToIso, nowISO, sleepMs, timeEpochS } from '../utils
 import { logD, logE, logI, logT, logV, logW } from '../utils/logging.js'
 
 import {
+  defaultPortalRequestOptions,
   FIELD_TOKEN,
   getPortalAuthCredentials,
   getPortalAuthHeaders,
@@ -47,7 +43,8 @@ import {
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
-  isOrganizationAttachedUrl,
+  organizationAttachRequestUrl,
+  linkedProducerHasTaskUrl,
   isPortalConnectionDisabled,
   JWT_USER,
   NO_PORTAL_MSG,
@@ -72,6 +69,10 @@ import {
   UnauthorizedError,
 } from '../utils/errors.js'
 import { createErrorReport } from './reportController.js'
+
+const mod = 'portalCtrl'
+
+const { pick } = _
 
 // -------------------------------------------------------------------------------------------------
 // Portal auth header
@@ -105,7 +106,6 @@ export const updateOrganizationFromPortal = async (req, reply) => {
     if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
     let portalOrganization = await getPortalOrganization(req, reply)
-    let isAttached = await isOrganizationAttached(req, reply)
 
     logT(mod, fun, portalOrganization)
 
@@ -113,7 +113,7 @@ export const updateOrganizationFromPortal = async (req, reply) => {
       let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization, isAttached)
+        updateOrganization(organization, portalOrganization)
 
         organization.save()
       }
@@ -136,12 +136,37 @@ export const getPortalOrganization = async (req, reply) => {
     if (organizationId) logD(mod, fun, `organizationId: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
     const additionalParameters = req.url?.split('?')[1]
-    return await httpGet(getPortalOrganizationUrl(organizationId, additionalParameters), token)
+    return await httpGet(
+      getPortalOrganizationUrl(organizationId, additionalParameters),
+      token,
+      defaultPortalRequestOptions()
+    )
   } catch (err) {
     // if (err.statusCode == 404) return null
     throw RudiError.treatError(mod, fun, err)
   }
 }
+
+export const searchOrganizationsInPortal = async (req, reply) => {
+  const fun = 'getOrganizationsFromPortal'
+  logT(mod, fun)
+
+  const token = await getPortalToken()
+
+  try{
+    const additionalParameters = req.url?.split('?')[1]
+    logI(mod, fun, `additionalParameters: ${additionalParameters}`)
+
+    return await httpGet(
+      getPortalOrganizationUrl('', additionalParameters),
+      token,
+      defaultPortalRequestOptions()
+    )
+  }catch(err){
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
 
 export const createPortalOrganization = async (organization) => {
   const fun = 'createPortalOrganization'
@@ -158,7 +183,12 @@ export const createPortalOrganization = async (organization) => {
       return NO_PORTAL_MSG
     }
 
-    return await httpPost(getPortalOrganizationUrl(), organization, token)
+    return await httpPost(
+      getPortalOrganizationUrl(),
+      organization,
+      token,
+      defaultPortalRequestOptions()
+    )
   } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
@@ -184,9 +214,103 @@ export const isOrganizationAttached = async (req, reply) => {
     }
 
     logI(mod, fun, `organizationId: ${organizationId}`)
-    return await httpGet(isOrganizationAttachedUrl(organizationId), token)
+    return await httpGet(
+      organizationAttachRequestUrl(organizationId),
+      token,
+      defaultPortalRequestOptions()
+    )
   } catch (err) {
     // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const attachOrganization = async (req, reply) => {
+  const fun = 'attachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    return await httpPost(
+      organizationAttachRequestUrl(organizationId),
+      req.body,
+      await getPortalToken(),
+      defaultPortalRequestOptions()
+    )
+  } catch (err) {
+    // if (err.statusCode == 404) return null
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const detachOrganization = async (req, reply) => {
+  const fun = 'detachOrganization'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    try {
+      const result = await httpDelete(organizationAttachRequestUrl(organizationId), await getPortalToken())
+      // Refresh the local organization status from portal after successful detach
+      await updateOrganizationFromPortal(req, reply)
+      return result
+    } catch (err) {
+      // 409 means a task is already pending — propagate as-is so the front can display a warning
+      if (err?.statusCode === 409) throw RudiError.createRudiHttpError(409, err.message, mod, fun)
+      throw err
+    }
+  } catch (err) {
+    throw RudiError.treatError(mod, fun, err)
+  }
+}
+
+export const linkedProducerHasTask = async (req, reply) => {
+  const fun = 'linkedProducerHasTask'
+  logT(mod, fun)
+  try {
+    if (isPortalConnectionDisabled()) {
+      return NO_PORTAL_MSG
+    }
+
+    let organizationId = req.params[PARAM_ID]
+    if (organizationId && !isUUID(organizationId)) {
+      organizationId = undefined
+    }
+    if (organizationId) {
+      logD(mod, fun, `organizationId: ${organizationId}`)
+    }
+
+    logI(mod, fun, `organizationId: ${organizationId}`)
+    try {
+      return await httpGet(linkedProducerHasTaskUrl(organizationId), await getPortalToken())
+    } catch (err) {
+      // 404 means no pending task for this organization — return false instead of throwing
+      if (err?.statusCode === 404) return false
+      throw err
+    }
+  } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
 }
@@ -522,7 +646,7 @@ export const verifyPortalTokenSign = async (jwt) => {
       logI(mod, fun, msg)
       const cachedPub = _cachedPortalJwtPubs[keyId]?.key?.n
       const portalPub = portalPubKeys.find((key) => key.kid == keyId)?.n
-      if (cachedPub != portalPub)
+    if (cachedPub != portalPub)
         logW(mod, fun, `Portal pub \n'${portalPub}'\n ≠ Cached pub \n'${cachedPub}'`)
     } else {
       logD(mod, fun, `cached keys: ${beautify(_cachedPortalJwtPubs)}`)
@@ -699,13 +823,22 @@ export const sendMetadataToPortal = async (metadataId) => {
       report.requestDetails = { method: 'GET', url: getPortalMetaUrl(metadataId) }
       logD(mod, fun, report.step)
 
-      portalAnswer = await httpGet(getPortalMetaUrl(metadataId), portalToken)
+      portalAnswer = await httpGet(
+        getPortalMetaUrl(metadataId),
+        portalToken,
+        defaultPortalRequestOptions()
+      )
     } catch {
       report.step = `sending a metadata that is not on the portal: '${metadataId}'`
       report.requestDetails = { method: 'POST', url: PORTAL_POST_URL }
       logD(mod, fun, report.step)
 
-      const postAnswer = await httpPost(PORTAL_POST_URL, portalReadyMetadata, portalToken)
+      const postAnswer = await httpPost(
+        PORTAL_POST_URL,
+        portalReadyMetadata,
+        portalToken,
+        defaultPortalRequestOptions()
+      )
       waitingMetadata[API_REPORT_ID] = isUUID(postAnswer) ? postAnswer : postAnswer.data
       return postAnswer
     }
@@ -716,7 +849,12 @@ export const sendMetadataToPortal = async (metadataId) => {
       report.requestDetails = { method: 'PUT', url: PORTAL_POST_URL }
       logD(mod, fun, report.step)
 
-      const putAnswer = await httpPut(PORTAL_POST_URL, portalReadyMetadata, portalToken)
+      const putAnswer = await httpPut(
+        PORTAL_POST_URL,
+        portalReadyMetadata,
+        portalToken,
+        defaultPortalRequestOptions()
+      )
       waitingMetadata[API_REPORT_ID] = isUUID(putAnswer) ? putAnswer : putAnswer.data
       return putAnswer
     } else {
@@ -732,7 +870,7 @@ export const sendMetadataToPortal = async (metadataId) => {
 }
 
 export const getPortalMetadataListWithToken = (token, additionalParameters) =>
-  httpGet(getPortalMetaUrl(null, additionalParameters), token)
+  httpGet(getPortalMetaUrl(null, additionalParameters), token, defaultPortalRequestOptions())
 
 export const getMetadataFromPortal = async (metadataId, additionalParameters) => {
   const fun = 'getMetadataFromPortal'
@@ -750,8 +888,20 @@ export const getMetadataFromPortal = async (metadataId, additionalParameters) =>
     report.metadata = { [API_METADATA_ID]: metadataId }
     report.description = 'An error occurred while getting a metadata from the Portal'
 
-    if (!metadataId) return httpGet(getPortalMetaUrl(null, additionalParameters), token)
-    else return httpGet(getPortalMetaUrl(metadataId, additionalParameters), token)
+    if (!metadataId) {
+      return httpGet(
+        getPortalMetaUrl(null, additionalParameters),
+        token,
+        defaultPortalRequestOptions()
+      )
+    }
+    else {
+      return httpGet(
+        getPortalMetaUrl(metadataId, additionalParameters),
+        token,
+        defaultPortalRequestOptions()
+      )
+    }
   } catch (err) {
     await createErrorReport(err, report)
     throw RudiError.treatError(mod, fun, err)
@@ -766,9 +916,8 @@ export const deletePortalMetadata = async (metadataId) => {
     if (!metadataId) throw new BadRequestError('Metadata id required') // Can't get the resources list yet.
 
     const token = await getPortalToken()
-    const reply = await httpDelete(postPortalMetaUrl(metadataId), token)
 
-    return reply
+    return await httpDelete(postPortalMetaUrl(metadataId), token, defaultPortalRequestOptions())
   } catch (err) {
     const error = new Error(`Couldn't delete on Portal side: ${err}`)
     throw RudiError.treatError(mod, fun, error)
@@ -822,21 +971,23 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganziation, isAttached) {
-  organization.organization_status = portalOrganziation.organization_status
-  organization.linked_producer_status = isAttached ? 'VALIDATED' : undefined
+function updateOrganization(organization, portalOrganization) {
+  organization.organization_status = portalOrganization.organization_status
+  organization.linked_producer_status = portalOrganization.linked_producer_status ?? organization.linked_producer_status
 
   if (
     Date.parse(organization.updatedAt) <
-    Date.parse(portalOrganziation?.organization_dates?.modified)
+    Date.parse(portalOrganization?.organization_dates?.modified)
   ) {
-    organization.organization_name = portalOrganziation.organization_name
+    organization.organization_name = portalOrganization.organization_name
 
-    if (portalOrganziation.organization_summary) {
-      organization.organization_summary = portalOrganziation.organization_summary
+    organization.updatedAt = portalOrganization.organization_dates.modified
+
+    if (portalOrganization.organization_summary) {
+      organization.organization_summary = portalOrganization.organization_summary
     }
-    if (portalOrganziation.organization_address) {
-      organization.organization_address = portalOrganziation.organization_address
+    if (portalOrganization.organization_address) {
+      organization.organization_address = portalOrganization.organization_address
     }
   }
 

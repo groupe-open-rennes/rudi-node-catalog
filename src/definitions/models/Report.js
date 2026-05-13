@@ -37,6 +37,7 @@ import {
   LOCAL_REPORT_ERROR,
   LOCAL_REPORT_ERROR_MSG,
   LOCAL_REPORT_ERROR_TYPE,
+  API_REPORT_OBJECT_TYPE,
 } from '../../db/dbFields.js'
 export const IntegrationStatus = {
   OK: 'OK',
@@ -50,6 +51,12 @@ export const ReportMethods = {
   DELETE: 'DELETE',
   ATTACH: 'ATTACH',
   DETACH: 'DETACH',
+}
+
+export const ObjectTypes = {
+  DATASET: 'DATASET',
+  ORGANIZATION: 'ORGANIZATION',
+  LINKED_PRODUCER: 'LINKED_PRODUCER',
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -137,6 +144,13 @@ const ReportSchema = new mongoose.Schema(
     [API_COLLECTION_TAG]: {
       type: String,
     },
+
+    [API_REPORT_OBJECT_TYPE]: {
+      type: String,
+      enum: ObjectTypes,
+      required: false,
+    },
+
   },
   {
     timestamps: true,
