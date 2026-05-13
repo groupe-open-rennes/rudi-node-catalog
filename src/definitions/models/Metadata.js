@@ -29,7 +29,8 @@ import {
   API_DATA_DESCRIPTION_PROPERTY,
   API_DATA_DETAILS_PROPERTY,
   API_DATA_NAME_PROPERTY,
-  API_DATA_PRODUCER_PROPERTY, API_DATA_UPDATE_FREQUENCY_PROPERTY,
+  API_DATA_PRODUCER_PROPERTY,
+  API_DATA_UPDATE_FREQUENCY_PROPERTY,
   API_DATES_CREATED,
   API_DATES_DELETED,
   API_DATES_EDITED,
@@ -101,7 +102,6 @@ const validArrayNotNull = {
   message: `'{PATH}' property should not be empty`,
 }
 
-
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
@@ -120,7 +120,7 @@ import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
 // logD(mod, 'init', 'Schemas, Models and definitions')
 import Keywords from '../thesaurus/Keywords.js'
 import Themes from '../thesaurus/Themes.js'
-import UpdateFrequency from '../thesaurus/UpdateFrequency.js'
+import UpdateFrequencies from '../thesaurus/UpdateFrequencies.js'
 
 import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
 
@@ -131,8 +131,8 @@ import { isValid as isStorageStatusValid, StorageStatus } from '../thesaurus/Sto
 // -------------------------------------------------------------------------------------------------
 // Schema definitions
 // -------------------------------------------------------------------------------------------------
-import { DoiSchema, UuidSchema, UuidV4Schema } from '../schemas/Identifiers.js'
 import { AccessConditionSchema } from '../schemas/AccessConditions.js'
+import { DoiSchema, UuidSchema, UuidV4Schema } from '../schemas/Identifiers.js'
 
 import { DictionaryEntrySchema } from '../schemas/DictionaryEntry.js'
 import { checkDates, ReferenceDatesSchema } from '../schemas/ReferenceDates.js'
@@ -769,28 +769,32 @@ async function checkThesaurus(metadata) {
     logT(mod, fun, `dataset update frequency`)
     const datasetUpdateFrequency = metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
     // logI(mod, fun, `datasetUpdateFrequency: ${beautify(datasetUpdateFrequency)}`)
-    if(datasetUpdateFrequency){
+    if (datasetUpdateFrequency) {
       const datasetUpdateFrequencyStr = beautify(datasetUpdateFrequency)
-      if(datasetUpdateFrequencyStr === '' || datasetUpdateFrequencyStr === 'null' || datasetUpdateFrequencyStr === '0') {
+      if (
+        datasetUpdateFrequencyStr === '' ||
+        datasetUpdateFrequencyStr === 'null' ||
+        datasetUpdateFrequencyStr === '0'
+      ) {
         delete metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
-      }
-      else {
-        await UpdateFrequency.isValid(datasetUpdateFrequency, true).then((isKnown) => {
-          if(isKnown) {
-            metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = datasetUpdateFrequency;
-            return true
-          }
-           else {
-             throw new BadRequestError(
-              incorrectVal(API_DATA_UPDATE_FREQUENCY_PROPERTY, datasetUpdateFrequency),
-              mod,
-              fun[API_DATA_UPDATE_FREQUENCY_PROPERTY]
-             )
-          }
-        }).catch((err) => {
-          // logW(mod, fun, err)
-          throw RudiError.treatError(mod, fun, err)
-        })
+      } else {
+        await UpdateFrequencies.isValid(datasetUpdateFrequency, true)
+          .then((isKnown) => {
+            if (isKnown) {
+              metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = datasetUpdateFrequency
+              return true
+            } else {
+              throw new BadRequestError(
+                incorrectVal(API_DATA_UPDATE_FREQUENCY_PROPERTY, datasetUpdateFrequency),
+                mod,
+                fun[API_DATA_UPDATE_FREQUENCY_PROPERTY]
+              )
+            }
+          })
+          .catch((err) => {
+            // logW(mod, fun, err)
+            throw RudiError.treatError(mod, fun, err)
+          })
       }
     }
 
