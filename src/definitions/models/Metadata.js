@@ -120,7 +120,7 @@ import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
 // logD(mod, 'init', 'Schemas, Models and definitions')
 import Keywords from '../thesaurus/Keywords.js'
 import Themes from '../thesaurus/Themes.js'
-import UpdateFrequencies from '../thesaurus/UpdateFrequencies.js'
+import UpdateFrequencies, { UpdateFrequency } from '../thesaurus/UpdateFrequencies.js'
 
 import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
 
@@ -423,6 +423,7 @@ const MetadataSchema = new mongoose.Schema(
 
     [API_DATA_UPDATE_FREQUENCY_PROPERTY]: {
       type: String,
+      enum: Object.values(UpdateFrequency),
       default: undefined,
     },
 
