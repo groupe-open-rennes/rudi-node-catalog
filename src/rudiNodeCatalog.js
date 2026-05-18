@@ -40,7 +40,6 @@ import { Metadata } from './definitions/models/Metadata.js'
 import { Organization } from './definitions/models/Organization.js'
 import Keywords from './definitions/thesaurus/Keywords.js'
 import Themes from './definitions/thesaurus/Themes.js'
-import UpdateFrequencies from './definitions/thesaurus/UpdateFrequencies.js'
 
 import { launchRouteListener, shutDownListener } from './routes/fastify.js'
 import { addLogEntry, logE, logI, logT, logW, sysAlert, sysCrit, sysInfo } from './utils/logging.js'
@@ -187,7 +186,6 @@ const start = async () => {
     separateLogs('Thesauri init', true) ////////////////////////////////////////////////////////////
     await Keywords.initialize()
     await Themes.initialize()
-    await UpdateFrequencies.initialize()
     await getLicenceCodes()
 
     separateLogs('Start', true) ////////////////////////////////////////////////////////////////////

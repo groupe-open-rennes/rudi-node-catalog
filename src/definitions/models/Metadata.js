@@ -132,9 +132,8 @@ import { isValid as isStorageStatusValid, StorageStatus } from '../thesaurus/Sto
 // Schema definitions
 // -------------------------------------------------------------------------------------------------
 import { AccessConditionSchema } from '../schemas/AccessConditions.js'
-import { DoiSchema, UuidSchema, UuidV4Schema } from '../schemas/Identifiers.js'
-
 import { DictionaryEntrySchema } from '../schemas/DictionaryEntry.js'
+import { DoiSchema, UuidSchema, UuidV4Schema } from '../schemas/Identifiers.js'
 import { checkDates, ReferenceDatesSchema } from '../schemas/ReferenceDates.js'
 import { RichDictionaryEntrySchema } from '../schemas/RichDictionaryEntry.js'
 

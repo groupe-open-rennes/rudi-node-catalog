@@ -145,18 +145,16 @@ export class Thesaurus {
       // There is a lang labels for each value AND a language is asked
       // logD(mod, fun, beautify(this.#currentValues))
       const langLabels = {}
-      if(needsSort){
+      if (needsSort) {
         Object.keys(this.#currentValues)
           .sort()
           .forEach((key) => {
             langLabels[key] = this.#currentValues[key][lang] ?? key
           })
-      }
-      else {
-        Object.keys(this.#currentValues)
-          .forEach((key) => {
-            langLabels[key] = this.#currentValues[key][lang] ?? key
-          })
+      } else {
+        Object.keys(this.#currentValues).forEach((key) => {
+          langLabels[key] = this.#currentValues[key][lang] ?? key
+        })
       }
 
       return langLabels
