@@ -315,7 +315,7 @@ const MetadataSchema = new mongoose.Schema(
         },
       ],
       required: true,
-      validate: validArrayNotNull,
+      // validate: validArrayNotNull,
     },
 
     // ---------------------------

@@ -142,17 +142,17 @@ import {
   getPublicUrl,
 } from '../config/confSystem.js'
 import {
+  attachOrganization,
   deleteMetadata,
+  detachOrganization,
   exposedCheckPortalToken,
   exposedGetPortalToken,
   getPortalMetadata,
-  updateOrganizationFromPortal,
+  linkedProducerHasTask,
   searchOrganizationsInPortal,
   sendAllMetadataToPortal,
   sendMetadata,
-  attachOrganization,
-  detachOrganization,
-  linkedProducerHasTask,
+  updateOrganizationFromPortal,
 } from '../controllers/portalController.js'
 import { getSinglePubKey } from '../controllers/publicKeyController.js'
 import {
@@ -546,7 +546,7 @@ export const backOfficeRoutes = [
     handler: upsertObjects,
     config: { [ROUTE_NAME]: 'prv_upsert_one' },
   },
-   // Get all
+  // Get all
   {
     description: 'Get organizations for metadata form',
     method: 'GET',
@@ -780,7 +780,7 @@ export const devRoutes = [
     method: 'GET',
     url: getPrivatePath(URL_SUFFIX_NODE_VERSION),
     handler: getNodeVersion,
-    config: { [ROUTE_NAME]: 'd†ev_get_node_version' },
+    config: { [ROUTE_NAME]: 'dev_get_node_version' },
   },
 
   // -----------------------------------------------------------------------------------------------
