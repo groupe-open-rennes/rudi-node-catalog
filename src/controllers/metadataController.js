@@ -772,7 +772,9 @@ export const commitMedia = async (req, res) => {
     dbMedia[API_FILE_STATUS_UPDATE] = nowISO()
     const savedMedia = await dbMedia.save()
 
-    const filter = { [QUERY_FILTER]: { $and: [{ available_formats: { $in: [savedMedia._id] } }] } }
+    const filter = {
+      [QUERY_FILTER]: { $and: [{ [API_MEDIA_PROPERTY]: { $in: [savedMedia._id] } }] },
+    }
     const dbMetadataList = await getDbObjectList(OBJ_METADATA, filter)
 
     // Updating metadata global storage state

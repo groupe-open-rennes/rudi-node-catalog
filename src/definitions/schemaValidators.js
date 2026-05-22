@@ -5,7 +5,7 @@
 // -------------------------------------------------------------------------------------------------
 
 // \d : digit character == \d
-// \w : word character == [0-9a-zA-Z_]
+// \w : word character == [\da-zA-Z_]
 // /i (at the end) : expression is case insensitive
 
 // -------------------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ export const VALID_EPOCH_S = [EPOCH_S, `'{VALUE}' is not a valid Epoch time in s
 // -------------------------------------------------------------------------------------------------
 // UUID
 // -------------------------------------------------------------------------------------------------
-export const REGEX_UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
+export const REGEX_UUID = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i
 export const VALID_UUID = [REGEX_UUID, `'{VALUE}' is not a valid UUID v4`]
 
 export const isUUID = (id) => validateSchema(id, REGEX_UUID)

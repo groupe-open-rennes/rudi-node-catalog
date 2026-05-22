@@ -140,9 +140,10 @@ export const httpPut = async (destUrl, dataToSend, authorizationToken, reqOpts =
     throw RudiError.treatError(mod, fun, err)
   }
 }
-const REQ_TIMEOUT_MS = 1000
+
+const REQ_TIMEOUT_MS = 2000
 const MAX_RETRIES = 5
-const INITIAL_DELAY_MS = 100
+const INITIAL_DELAY_MS = 500
 
 /**
  * Generic Axios request with retry and exponential backoff
