@@ -563,12 +563,12 @@ export const getDbObjectList = async (objectType, options) => {
     // logD(mod, fun, `options: ${beautify(options)}`)
 
     // Extract options
-    const limit = getParamValue(options, QUERY_LIMIT, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT)
-    const offset = getParamValue(options, QUERY_OFFSET, DEFAULT_QUERY_OFFSET)
     const filter = getParamValue(options, QUERY_FILTER)
-    const fields = getParamValue(options, QUERY_FIELDS)
     const sortByFields =
       getParamValue(options, QUERY_SORT_BY) || getParamValue(options, QUERY_SORT_BY_CAML)
+    const offset = getParamValue(options, QUERY_OFFSET, DEFAULT_QUERY_OFFSET)
+    const limit = getParamValue(options, QUERY_LIMIT, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT)
+    const fields = getParamValue(options, QUERY_FIELDS)
 
     const populateFields = getPopulateFields(objectType)
 
@@ -589,7 +589,7 @@ export const getDbObjectList = async (objectType, options) => {
     }
     sortOptions[DB_ID] = 1 // Default sort to get consistent offset/limit results
 
-    // logD(mod, fun, `sortOptions: ${beautify(sortOptions)}`)
+    logD(mod, fun, `sortOptions: ${beautify(sortOptions)}`)
 
     //--- Find
     const fieldsToKeep = fields ? fields.join(' ') : ``
