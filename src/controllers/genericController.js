@@ -140,26 +140,21 @@ function getObjectParam(req) {
   const objectType = accessReqParam(req, PARAM_OBJECT)
   try {
     checkIsUrlObject(objectType)
-  } catch (err) {
+  } catch {
     const errMsg = `Route '${req.method} ${req.url}' not found`
-    // logW(mod, fun, errMsg)
-    // sysNotice(`Error 404: ${errMsg}`, '', CallContext.getReqContext(req))
     throw new NotFoundError(errMsg)
   }
   return objectType
 }
 
 function checkIsUrlObject(objectType) {
-  // const fun = 'checkIsUrlObject'
-  // logT(mod, fun, beautify(URL_OBJECTS))
-  if (URL_OBJECTS.indexOf(objectType) === -1) {
+  if (URL_OBJECTS.indexOf(objectType) === -1)
     throw new NotFoundError(objectTypeNotFound(objectType))
-  }
 }
 
 async function newObject(objectType, objectData) {
   const fun = 'newObject'
-  logT(mod, fun)
+  logT(mod, fun, objectType)
   try {
     // checkIsUrlObject(objectType)
     switch (objectType) {
@@ -199,10 +194,10 @@ async function newRudiObject(Model, objectData) {
     const dbObject = new Model(objectData)
 
     // On envoie la demande de création de l'organisation au portail si celui-ci est lié
-    if (!isPortalConnectionDisabled()) {
-      let organizationId = await createPortalOrganization(dbObject)
+    if (Model == Organization && !isPortalConnectionDisabled()) {
+      const organizationId = await createPortalOrganization(dbObject)
       if (organizationId) {
-        dbObject['organization_id'] = organizationId
+        // dbObject['organization_id'] = organizationId
         dbObject['organization_status'] = OrganizationStatus.DRAFT
       }
     }
@@ -258,7 +253,7 @@ function overrideFilter(filterList, field, value) {
  */
 async function addSingleRudiObject(rudiObject, objectType, context) {
   const fun = 'addSingleRudiObject'
-  logT(mod, fun)
+  logT(mod, fun, objectType)
   try {
     // get the rudiId field for this object type
     const idField = getObjectIdField(objectType)
@@ -401,7 +396,6 @@ export const getObjectList = async (req, reply) => {
     // retrieve url parameter: object type
     // logD(mod, fun, beautify(req))
     const objectType = getObjectParam(req)
-    logT(mod, fun, `objectType: ${objectType}`)
 
     return await getManyObjects(objectType, req)
   } catch (err) {
@@ -597,10 +591,10 @@ export const getMetadataListAndCount = async (req, reply) => {
     }
     let objectList
     const options = pick(parsedParameters, [
-      QUERY_LIMIT,
-      QUERY_OFFSET,
-      QUERY_SORT_BY,
       QUERY_FILTER,
+      QUERY_SORT_BY,
+      QUERY_OFFSET,
+      QUERY_LIMIT,
       QUERY_FIELDS,
     ])
     // logD(mod, fun, beautify(options[QUERY_FILTER]))
