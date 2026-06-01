@@ -187,7 +187,7 @@ export const verifyRudiCatalogToken = async (token, reqMethod, reqUrl) => {
       logE(mod, fun, `content: '${pubStr}'`)
       throw new ForbiddenError(beautify(e.message || e))
     }
-    logT(mod, fun, 'Token in request headers is OK')
+    logT(mod, fun, `Token in request headers is OK for '${subject}'`)
     // Check the current route
     const jwtMtd = accessProperty(payload, REQ_MTD)
     if (jwtMtd !== reqMethod && jwtMtd !== REQ_ROUTE_ALL)

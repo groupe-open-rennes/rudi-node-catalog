@@ -33,11 +33,11 @@
   "homepage": "https://app.swaggerhub.com/apis/OlivierMartineau/RUDI-PRODUCER",
   "license": "EUPL-1.2",
   "dependencies": {
-    "@aqmo.org/jwt-lib": "^1.1.14",
+    "@aqmo.org/jwt-lib": "^1.1.15",
     "@aqmo.org/rudi_logger": "^1.1.6",
     "@fastify/compress": "^8.3.1",
     "@fastify/multipart": "^9.4.0",
-    "axios": "^1.16.0",
+    "axios": "^1.16.1",
     "date-and-time": "^4.5.0",
     "fastify": "^5.8.5",
     "ini": "^7.0.0",
@@ -46,30 +46,31 @@
     "markdown-table": "^3.0.4",
     "minimist": "^1.2.8",
     "mongoose": "8.15.1",
-    "mongoose-geojson-schema": "^2.2.5",
+    "mongoose-geojson-schema": "^2.2.7",
     "mongoose-int32": "^0.6.0",
-    "nanoid": "^5.1.6",
+    "nanoid": "^5.1.11",
     "object-path": "^0.11.8",
-    "sanitize-filename": "^1.6.3",
+    "sanitize-filename": "^1.6.4",
     "sshpk": "^1.18.0",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.6",
-    "@babel/eslint-parser": "^7.28.6",
-    "@babel/preset-env": "^7.29.5",
+    "@babel/core": "^7.29.7",
+    "@babel/eslint-parser": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
     "braces": "^3.0.3",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-unused-imports": "^4.3.0",
-    "nodemon": "^3.1.11",
-    "prettier": "^3.8.0"
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.3"
   },
   "overrides": {
-    "braces": "$braces"
+    "braces": "$braces",
+    "uuid": "$uuid"
   }
 }
