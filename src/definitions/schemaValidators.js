@@ -4,8 +4,8 @@
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
 
-// \d : digit character == \d
-// \w : word character == [\da-zA-Z_]
+// \d : digit character == [0-9]
+// \w : word character == [0-9a-zA-Z_]
 // /i (at the end) : expression is case insensitive
 
 // -------------------------------------------------------------------------------------------------

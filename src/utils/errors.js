@@ -24,7 +24,7 @@ import {
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
-import { beautify, isArray } from './jsUtils.js'
+import { beautify } from './jsUtils.js'
 import { logD, logT, logW } from './logging.js'
 import { objectNotFound, parameterExpected } from './msg.js'
 
@@ -271,7 +271,7 @@ export class RudiError extends Error {
         }
       } else if (comError.message) {
         const errMsg = comError.message
-        if (errMsg.startsWith('Request failed with status code ')) {
+        if (`${errMsg}`.startsWith('Request failed with status code ')) {
           const errCode = `${errMsg}`.slice(32, 35)
           logT(mod, fun, `${errFlag}error message ${errCode}: ${beautify(comError)}`)
           error = RudiError.createRudiHttpError(errCode, errMsg)
@@ -317,7 +317,7 @@ export class BadRequestError extends RudiError {
       ctxFun,
       pathArray
     )
-    if (pathArray && !isArray(pathArray)) {
+    if (pathArray && !Array.isArray(pathArray)) {
       logW(ctxMod, ctxFun, `BadRequest constructor Error: 4th parameter should be an array`)
       this.path = [pathArray]
     }

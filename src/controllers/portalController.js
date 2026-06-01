@@ -43,11 +43,11 @@ import {
   getUrlPortalAuthGet,
   getUrlPortalAuthPub,
   getUrlPortalEncryptPub,
-  organizationAttachRequestUrl,
-  linkedProducerHasTaskUrl,
   isPortalConnectionDisabled,
   JWT_USER,
+  linkedProducerHasTaskUrl,
   NO_PORTAL_MSG,
+  organizationAttachRequestUrl,
   postPortalMetaUrl,
 } from '../config/confPortal.js'
 import { directPost, httpDelete, httpGet, httpPost, httpPut } from '../utils/httpReq.js'
@@ -81,8 +81,10 @@ const portalHttpsAgent = new https.Agent({ rejectUnauthorized: false })
 
 export const getPortalAuthHeaderBearer = async (httpsAgent) => {
   const fun = 'getPortalAuthHeaderBearer'
+  logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
+
   try {
-    logT(mod, fun)
     const portalToken = await getPortalToken()
     return {
       headers: { 'User-Agent': USER_AGENT, Authorization: `Bearer ${portalToken}` },
@@ -100,20 +102,21 @@ export const getPortalAuthHeaderBearer = async (httpsAgent) => {
 export const updateOrganizationFromPortal = async (req, reply) => {
   const fun = 'getPortalOrganization'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
   try {
     // Si le portail n'est pas configuré, on ne fait pas d'appel
-    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
-    let portalOrganization = await getPortalOrganization(req, reply)
+    const portalOrganization = await getPortalOrganization(req, reply)
+    const isAttached = await isOrganizationAttached(req, reply)
 
     logT(mod, fun, portalOrganization)
 
     if (portalOrganization) {
-      let organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
+      const organization = await getObjectWithRudiId(OBJ_ORGANIZATIONS, req.params[PARAM_ID])
       logT(mod, fun, portalOrganization, organization)
       if (organization) {
-        updateOrganization(organization, portalOrganization)
+        updateOrganization(organization, portalOrganization, isAttached)
 
         organization.save()
       }
@@ -126,19 +129,18 @@ export const updateOrganizationFromPortal = async (req, reply) => {
 export const getPortalOrganization = async (req, reply) => {
   const fun = 'getPortalOrganizationAsync'
   logT(mod, fun)
-
-  const token = await getPortalToken()
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
   try {
-    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
     let organizationId = req.params[PARAM_ID]
     if (organizationId && !isUUID(organizationId)) organizationId = undefined
     if (organizationId) logD(mod, fun, `organizationId: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
+
     const additionalParameters = req.url?.split('?')[1]
     return await httpGet(
       getPortalOrganizationUrl(organizationId, additionalParameters),
-      token,
+      await getPortalToken(),
       defaultPortalRequestOptions()
     )
   } catch (err) {
@@ -150,43 +152,34 @@ export const getPortalOrganization = async (req, reply) => {
 export const searchOrganizationsInPortal = async (req, reply) => {
   const fun = 'getOrganizationsFromPortal'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
-  const token = await getPortalToken()
-
-  try{
+  try {
     const additionalParameters = req.url?.split('?')[1]
     logI(mod, fun, `additionalParameters: ${additionalParameters}`)
 
     return await httpGet(
       getPortalOrganizationUrl('', additionalParameters),
-      token,
+      await getPortalToken(),
       defaultPortalRequestOptions()
     )
-  }catch(err){
+  } catch (err) {
     throw RudiError.treatError(mod, fun, err)
   }
 }
 
-
 export const createPortalOrganization = async (organization) => {
   const fun = 'createPortalOrganization'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
-  if (!organization) {
-    return organization
-  }
-
-  const token = await getPortalToken()
+  if (!organization) throw BadRequestError('Input organization should be defined')
 
   try {
-    if (isPortalConnectionDisabled()) {
-      return NO_PORTAL_MSG
-    }
-
     return await httpPost(
       getPortalOrganizationUrl(),
       organization,
-      token,
+      await getPortalToken(),
       defaultPortalRequestOptions()
     )
   } catch (err) {
@@ -197,26 +190,18 @@ export const createPortalOrganization = async (organization) => {
 export const isOrganizationAttached = async (req, reply) => {
   const fun = 'isOrganizationAttached'
   logT(mod, fun)
-
-  const token = await getPortalToken()
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
   try {
-    if (isPortalConnectionDisabled()) {
-      return NO_PORTAL_MSG
-    }
-
-    let organizationId = req.params[PARAM_ID]
-    if (organizationId && !isUUID(organizationId)) {
-      organizationId = undefined
-    }
-    if (organizationId) {
-      logD(mod, fun, `organizationId: ${organizationId}`)
-    }
-
+    const organizationId = req.params?.[PARAM_ID]
+    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!isUUID(organizationId))
+      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
+
     return await httpGet(
       organizationAttachRequestUrl(organizationId),
-      token,
+      await getPortalToken(),
       defaultPortalRequestOptions()
     )
   } catch (err) {
@@ -228,20 +213,14 @@ export const isOrganizationAttached = async (req, reply) => {
 export const attachOrganization = async (req, reply) => {
   const fun = 'attachOrganization'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   try {
-    if (isPortalConnectionDisabled()) {
-      return NO_PORTAL_MSG
-    }
-
-    let organizationId = req.params[PARAM_ID]
-    if (organizationId && !isUUID(organizationId)) {
-      organizationId = undefined
-    }
-    if (organizationId) {
-      logD(mod, fun, `organizationId: ${organizationId}`)
-    }
-
+    const organizationId = req.params?.[PARAM_ID]
+    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!isUUID(organizationId))
+      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
+
     return await httpPost(
       organizationAttachRequestUrl(organizationId),
       req.body,
@@ -257,22 +236,19 @@ export const attachOrganization = async (req, reply) => {
 export const detachOrganization = async (req, reply) => {
   const fun = 'detachOrganization'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   try {
-    if (isPortalConnectionDisabled()) {
-      return NO_PORTAL_MSG
-    }
-
-    let organizationId = req.params[PARAM_ID]
-    if (organizationId && !isUUID(organizationId)) {
-      organizationId = undefined
-    }
-    if (organizationId) {
-      logD(mod, fun, `organizationId: ${organizationId}`)
-    }
-
+    const organizationId = req.params?.[PARAM_ID]
+    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!isUUID(organizationId))
+      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
+
     try {
-      const result = await httpDelete(organizationAttachRequestUrl(organizationId), await getPortalToken())
+      const result = await httpDelete(
+        organizationAttachRequestUrl(organizationId),
+        await getPortalToken()
+      )
       // Refresh the local organization status from portal after successful detach
       await updateOrganizationFromPortal(req, reply)
       return result
@@ -289,11 +265,8 @@ export const detachOrganization = async (req, reply) => {
 export const linkedProducerHasTask = async (req, reply) => {
   const fun = 'linkedProducerHasTask'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   try {
-    if (isPortalConnectionDisabled()) {
-      return NO_PORTAL_MSG
-    }
-
     let organizationId = req.params[PARAM_ID]
     if (organizationId && !isUUID(organizationId)) {
       organizationId = undefined
@@ -646,7 +619,7 @@ export const verifyPortalTokenSign = async (jwt) => {
       logI(mod, fun, msg)
       const cachedPub = _cachedPortalJwtPubs[keyId]?.key?.n
       const portalPub = portalPubKeys.find((key) => key.kid == keyId)?.n
-    if (cachedPub != portalPub)
+      if (cachedPub != portalPub)
         logW(mod, fun, `Portal pub \n'${portalPub}'\n ≠ Cached pub \n'${cachedPub}'`)
     } else {
       logD(mod, fun, `cached keys: ${beautify(_cachedPortalJwtPubs)}`)
@@ -875,10 +848,9 @@ export const getPortalMetadataListWithToken = (token, additionalParameters) =>
 export const getMetadataFromPortal = async (metadataId, additionalParameters) => {
   const fun = 'getMetadataFromPortal'
   logT(mod, fun)
+  if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   const report = {}
   try {
-    if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
-
     report.step = 'retrieving Portal token'
     const token = await getPortalToken()
 
@@ -894,8 +866,7 @@ export const getMetadataFromPortal = async (metadataId, additionalParameters) =>
         token,
         defaultPortalRequestOptions()
       )
-    }
-    else {
+    } else {
       return httpGet(
         getPortalMetaUrl(metadataId, additionalParameters),
         token,
@@ -971,9 +942,10 @@ export const exposedCheckPortalToken = async (req, reply) => {
   }
 }
 
-function updateOrganization(organization, portalOrganization) {
+function updateOrganization(organization, portalOrganization, isAttached) {
   organization.organization_status = portalOrganization.organization_status
-  organization.linked_producer_status = portalOrganization.linked_producer_status ?? organization.linked_producer_status
+  organization.linked_producer_status =
+    portalOrganization.linked_producer_status ?? organization.linked_producer_status
 
   if (
     Date.parse(organization.updatedAt) <

@@ -399,7 +399,6 @@ export const getObjectList = async (req, reply) => {
 
     return await getManyObjects(objectType, req)
   } catch (err) {
-    logE(mod, fun, err)
     throw RudiError.treatError(mod, fun, err)
   }
 }

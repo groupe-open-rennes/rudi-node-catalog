@@ -31,6 +31,7 @@ import {
   PARAM_REPORT_ID,
   PARAM_THESAURUS_CODE,
   PARAM_THESAURUS_LANG,
+  PORTAL_API_VERSION,
   ROUTE_NAME,
   ROUTE_OPT,
   URL_LICENCE_SUFFIX,
@@ -50,9 +51,7 @@ import {
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
 // -------------------------------------------------------------------------------------------------
-import { logD } from '../utils/logging.js'
-
-import { searchOrganizations } from '../controllers/organizationController.js'
+import { logD, logI } from '../utils/logging.js'
 
 // -------------------------------------------------------------------------------------------------
 // Swagger documentation
@@ -135,13 +134,16 @@ import {
 
 import { getPortalBaseUrl } from '../config/confPortal.js'
 import {
+  CATALOG_PREFIX,
   getCatalog,
   getLegacyApiPath,
   getLegacyPrivatePath,
   getPrivatePath,
   getPublicPath,
   getPublicUrl,
+  LEGACY_PREFIX,
 } from '../config/confSystem.js'
+import { searchOrganizations } from '../controllers/organizationController.js'
 import {
   attachOrganization,
   deleteMetadata,
@@ -168,6 +170,8 @@ import {
   onPublicRoute,
   onUnrestrictedPrivateRoute,
 } from './routes_secu.js'
+
+logI('routes', 'PUT report URL =>', getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, ACT_REPORT))
 
 // -------------------------------------------------------------------------------------------------
 // Free routes (no authentification required)
@@ -215,6 +219,18 @@ export const publicRoutes = [
     },
   },
   {
+    description: `Redirection: GET ${getCatalog(OBJ_METADATA, '*')} -> GET ${getPublicPath(OBJ_METADATA)}/*`,
+    method: 'GET',
+    url: getCatalog(OBJ_METADATA, '*'),
+    config: { [ROUTE_NAME]: 'redirect_get_data' },
+    handler: function (req, reply) {
+      const splitUrl = `${req.url}`.slice(CATALOG_PREFIX.length + 1)
+      const newRoute = getPublicPath(splitUrl)
+      logD(mod, `redirect`, `${req.method} ${newRoute}`)
+      reply.code(308).redirect(newRoute)
+    },
+  },
+  {
     description: `Redirection: GET /${OBJ_METADATA}/* -> GET ${getPublicPath(OBJ_METADATA)}/*`,
     method: 'GET',
     url: `/${OBJ_METADATA}/*`,
@@ -258,14 +274,14 @@ export const publicRoutes = [
     method: 'GET',
     url: getPublicPath(OBJ_ORGANIZATIONS),
     handler: searchOrganizations,
-    config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
+    config: { [ROUTE_NAME]: 'pub_get_all_organizations' },
   },
   {
     description: 'Access all contacts created on the RUDI producer node',
     method: 'GET',
     url: getPublicPath(OBJ_CONTACTS),
     handler: getAllContacts,
-    config: { [ROUTE_NAME]: 'pub_get_all_metadata' },
+    config: { [ROUTE_NAME]: 'pub_get_all_contacts' },
   },
   /*
    * @oas [get] /api/v1/resources/{metaId}
@@ -363,7 +379,7 @@ export const portalRoutes = [
   {
     description: 'Add/edit 1 report for one object integration',
     method: 'PUT',
-    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, `${ACT_REPORT}`),
+    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, ACT_REPORT),
     handler: addOrEditSingleReportForMetadata,
     config: { [ROUTE_NAME]: 'portal_upsert_one_report' },
   },
@@ -371,7 +387,7 @@ export const portalRoutes = [
   {
     description: 'Add/edit 1 report for one organization integration',
     method: 'PUT',
-    url: getPublicPath(OBJ_ORGANIZATIONS, `:${PARAM_ID}`, `${ACT_REPORT}`),
+    url: getPublicPath(OBJ_ORGANIZATIONS, `:${PARAM_ID}`, ACT_REPORT),
     handler: addOrEditSingleReportForOrganization,
     config: { [ROUTE_NAME]: 'portal_put_org_report' },
   },
@@ -380,7 +396,7 @@ export const portalRoutes = [
   {
     description: 'Get all reports for one object integration',
     method: 'GET',
-    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, `${ACT_REPORT}`),
+    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, ACT_REPORT),
     handler: getReportListForMetadata,
     config: { [ROUTE_NAME]: 'portal_get_all_obj_report' },
   },
@@ -388,7 +404,7 @@ export const portalRoutes = [
   {
     description: 'Get 1 report for one object integration',
     method: 'GET',
-    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, `${ACT_REPORT}`, `:${PARAM_REPORT_ID}`),
+    url: getPublicPath(OBJ_METADATA, `:${PARAM_ID}`, ACT_REPORT, `:${PARAM_REPORT_ID}`),
     handler: getSingleReportForMetadata,
     config: { [ROUTE_NAME]: 'portal_get_one_obj_report' },
   },
@@ -401,6 +417,30 @@ export const portalRoutes = [
     config: { [ROUTE_NAME]: 'redirect_put_plus' },
     handler: (req, reply) => {
       const newRoute = getPublicPath(req.url)
+      logD(mod, `redirect`, `${req.method} ${newRoute}`)
+      reply.code(308).redirect(newRoute)
+    },
+  },
+  {
+    description: 'Redirection for adding an integration report',
+    method: 'PUT',
+    url: `/${CATALOG_PREFIX}/${OBJ_METADATA}/*`,
+    config: { [ROUTE_NAME]: 'redirect_put_plus' },
+    handler: (req, reply) => {
+      const splitUrl = `${req.url}`.slice(CATALOG_PREFIX.length + 1)
+      const newRoute = getPublicPath(splitUrl)
+      logD(mod, `redirect`, `${req.method} ${newRoute}`)
+      reply.code(308).redirect(newRoute)
+    },
+  },
+  {
+    description: 'Redirection for adding an integration report',
+    method: 'PUT',
+    url: `/${LEGACY_PREFIX}/${OBJ_METADATA}/*`,
+    config: { [ROUTE_NAME]: 'redirect_put_plus' },
+    handler: (req, reply) => {
+      const splitUrl = `${req.url}`.slice(LEGACY_PREFIX.length + 1)
+      const newRoute = getPublicPath(splitUrl)
       logD(mod, `redirect`, `${req.method} ${newRoute}`)
       reply.code(308).redirect(newRoute)
     },
@@ -547,14 +587,7 @@ export const backOfficeRoutes = [
     handler: upsertObjects,
     config: { [ROUTE_NAME]: 'prv_upsert_one' },
   },
-  // Get all
-  {
-    description: 'Get organizations for metadata form',
-    method: 'GET',
-    url: getPrivatePath(OBJ_ORGANIZATIONS, 'metadata'),
-    handler: searchOrganizations,
-    config: { [ROUTE_NAME]: 'prv_get_org_metadata' },
-  },
+
   // Get all
   {
     description: 'Get all objects',
@@ -994,6 +1027,13 @@ export const devRoutes = [
     url: getPrivatePath(ACT_CHECK, URL_SUFFIX_PORTAL, 'url'),
     handler: () => getPortalBaseUrl(),
     config: { [ROUTE_NAME]: 'dev_check_portal_url' },
+  },
+  {
+    description: 'Get the API version of the portal associated with this node',
+    method: 'GET',
+    url: getPrivatePath(ACT_CHECK, URL_SUFFIX_PORTAL, 'version'),
+    handler: () => PORTAL_API_VERSION,
+    config: { [ROUTE_NAME]: 'dev_check_portal_version' },
   },
 
   // -----------------------------------------------------------------------------------------------

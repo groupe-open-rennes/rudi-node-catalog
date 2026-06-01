@@ -17,15 +17,15 @@ import { logT } from '../utils/logging.js'
 // -------------------------------------------------------------------------------------------------
 // Data models
 // -------------------------------------------------------------------------------------------------
-import { getOrganizationWithJson, searchOrganziations } from '../db/dbQueries.js'
-import { Organization } from '../definitions/models/Organization.js'
-import { RudiError } from '../utils/errors.js'
+import { isPortalConnectionDisabled } from '../config/confPortal.js'
+import { OBJ_ORGANIZATIONS } from '../config/constApi.js'
 import {
   API_ORGANIZATION_ATTACHMENT_STATUS,
   API_ORGANIZATION_VALIDATION_STATUS,
 } from '../db/dbFields.js'
-import { isPortalConnectionDisabled } from '../config/confPortal.js'
-import { OBJ_ORGANIZATIONS } from '../config/constApi.js'
+import { dbSearchOrganizations, getOrganizationWithJson } from '../db/dbQueries.js'
+import { Organization } from '../definitions/models/Organization.js'
+import { RudiError } from '../utils/errors.js'
 import { getManyObjects } from './genericController.js'
 // import cache from '../db/dbCache'
 
@@ -60,5 +60,5 @@ export const searchOrganizations = async (req, reply) => {
   const linkedProducerStatus =
     req?.query?.[API_ORGANIZATION_ATTACHMENT_STATUS] ??
     req?.params?.[API_ORGANIZATION_ATTACHMENT_STATUS]
-  return searchOrganziations(organizationStatus, linkedProducerStatus)
+  return dbSearchOrganizations(organizationStatus, linkedProducerStatus)
 }

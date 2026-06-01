@@ -28,6 +28,7 @@ import {
   API_REPORT_FIELD,
   API_REPORT_ID,
   API_REPORT_METHOD,
+  API_REPORT_OBJECT_TYPE,
   API_REPORT_RESOURCE_ID,
   API_REPORT_STATUS,
   API_REPORT_SUBMISSION_DATE,
@@ -37,7 +38,6 @@ import {
   LOCAL_REPORT_ERROR,
   LOCAL_REPORT_ERROR_MSG,
   LOCAL_REPORT_ERROR_TYPE,
-  API_REPORT_OBJECT_TYPE,
 } from '../../db/dbFields.js'
 export const IntegrationStatus = {
   OK: 'OK',
@@ -150,7 +150,6 @@ const ReportSchema = new mongoose.Schema(
       enum: ObjectTypes,
       required: false,
     },
-
   },
   {
     timestamps: true,

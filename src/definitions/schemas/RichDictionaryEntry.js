@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 // Constants
 // -------------------------------------------------------------------------------------------------
-import { RICH_DICT_LANG, RICH_DICT_TEXT, RICH_DICT_HTML } from '../../db/dbFields.js'
+import { DICT_LANG, DICT_TEXT, RICH_DICT_HTML } from '../../db/dbFields.js'
 
 // -------------------------------------------------------------------------------------------------
 // Internal dependencies
@@ -14,7 +14,7 @@ const Languages = getLanguages()
 // -------------------------------------------------------------------------------------------------
 export const RichDictionaryEntrySchema = {
   type: {
-    [RICH_DICT_LANG]: {
+    [DICT_LANG]: {
       type: String,
       default: Languages.fr,
       enum: Object.values(Languages),
@@ -22,7 +22,7 @@ export const RichDictionaryEntrySchema = {
       _id: false,
     },
 
-    [RICH_DICT_TEXT]: {
+    [DICT_TEXT]: {
       type: String, // Only one entry per language!
       required: true,
       _id: false,

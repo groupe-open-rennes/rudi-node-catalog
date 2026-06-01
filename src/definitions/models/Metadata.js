@@ -120,13 +120,14 @@ import { incorrectVal, incorrectValueForEnum } from '../../utils/msg.js'
 // logD(mod, 'init', 'Schemas, Models and definitions')
 import Keywords from '../thesaurus/Keywords.js'
 import Themes from '../thesaurus/Themes.js'
-import UpdateFrequencies, { UpdateFrequency } from '../thesaurus/UpdateFrequencies.js'
+import { UpdateFrequency } from '../thesaurus/UpdateFrequencies.js'
 
 import { isValid as isLanguageValid } from '../thesaurus/Languages.js'
 
 // import { get as getLicenceCodes } from '../thesaurus/LicenceCodes.js'
 import { isValid as isProjectionValid } from '../thesaurus/Projections.js'
 import { isValid as isStorageStatusValid, StorageStatus } from '../thesaurus/StorageStatus.js'
+import { isValid as isUpdateFrequenciesValid } from '../thesaurus/UpdateFrequencies.js'
 
 // -------------------------------------------------------------------------------------------------
 // Schema definitions
@@ -172,6 +173,8 @@ export const METADATA_FIELDS_TO_POPULATE = [
  */
 export const listMissingMedia = (rudiMetadata) => {
   const metadataMediaList = rudiMetadata[API_MEDIA_PROPERTY]
+  if (!metadataMediaList) return null
+
   const missingMediaList = []
   metadataMediaList.map((media) => {
     if (media[API_MEDIA_TYPE] === MediaTypes.File && isMediaMissing(media))
@@ -316,7 +319,10 @@ const MetadataSchema = new mongoose.Schema(
       ],
       required: true,
       default: [],
-      // validate: validArrayNotNull,
+      validate: {
+        validator: (media_list) => Array.isArray(media_list),
+        message: `'{PATH}' property should be a list of RudiMedia`,
+      },
     },
 
     // ---------------------------
@@ -627,8 +633,9 @@ async function checkFileTypes(metadata) {
   const fun = 'checkFileTypes'
   try {
     logT(mod, fun)
-    const medias = metadata[API_MEDIA_PROPERTY]
-    medias.map((media, i) => {
+    const mediaList = metadata[API_MEDIA_PROPERTY]
+    if (!mediaList) return
+    mediaList.map((media, i) => {
       if (media[API_MEDIA_TYPE] !== MediaTypes.File) return
 
       const [, mimeType, encrypted] = /^(.*?)(\+crypt)?$/.exec(media[API_FILE_MIME])
@@ -767,37 +774,12 @@ async function checkThesaurus(metadata) {
       )
     }
 
-    logT(mod, fun, `dataset update frequency`)
-    const datasetUpdateFrequency = metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
-    // logI(mod, fun, `datasetUpdateFrequency: ${beautify(datasetUpdateFrequency)}`)
-    if (datasetUpdateFrequency) {
-      const datasetUpdateFrequencyStr = beautify(datasetUpdateFrequency)
-      if (
-        datasetUpdateFrequencyStr === '' ||
-        datasetUpdateFrequencyStr === 'null' ||
-        datasetUpdateFrequencyStr === '0'
-      ) {
-        delete metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY]
-      } else {
-        await UpdateFrequencies.isValid(datasetUpdateFrequency, true)
-          .then((isKnown) => {
-            if (isKnown) {
-              metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = datasetUpdateFrequency
-              return true
-            } else {
-              throw new BadRequestError(
-                incorrectVal(API_DATA_UPDATE_FREQUENCY_PROPERTY, datasetUpdateFrequency),
-                mod,
-                fun[API_DATA_UPDATE_FREQUENCY_PROPERTY]
-              )
-            }
-          })
-          .catch((err) => {
-            // logW(mod, fun, err)
-            throw RudiError.treatError(mod, fun, err)
-          })
-      }
-    }
+    logT(mod, fun, `is dataset update freq valid`)
+    if (
+      !metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] ||
+      !isUpdateFrequenciesValid(metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY])
+    )
+      metadata[API_DATA_UPDATE_FREQUENCY_PROPERTY] = undefined
 
     return true
   } catch (err) {

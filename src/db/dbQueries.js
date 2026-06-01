@@ -595,7 +595,7 @@ export const getDbObjectList = async (objectType, options) => {
     const fieldsToKeep = fields ? fields.join(' ') : ``
 
     if (isEmptyArray(populateFields)) {
-      return await ObjModel.find(filter, fieldsToKeep).sort(sortOptions).limit(limit).skip(offset)
+      return await ObjModel.find(filter, fieldsToKeep).sort(sortOptions).skip(offset).limit(limit)
     } else {
       // Populate
       const objectList = await ObjModel.find(filter, fieldsToKeep)
@@ -630,16 +630,15 @@ export const getDbObjectListAndCount = async (objectType, options) => {
     const ObjModel = getObjectModel(objectType)
 
     // Extract options
-    const limit = getParamValue(options, QUERY_LIMIT, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT)
-    const offset = getParamValue(options, QUERY_OFFSET, DEFAULT_QUERY_OFFSET)
+    // logT(mod, fun, `objectType: '${objectType}', options: ${beautify(options)}`)
     const filter = getParamValue(options, QUERY_FILTER, {})
-    const fieldsToKeep = getParamValue(options, QUERY_FIELDS)
     const sortByFields =
       getParamValue(options, QUERY_SORT_BY) || getParamValue(options, QUERY_SORT_BY_CAML)
+    const limit = getParamValue(options, QUERY_LIMIT, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT)
+    const offset = getParamValue(options, QUERY_OFFSET, DEFAULT_QUERY_OFFSET)
+    const fieldsToKeep = getParamValue(options, QUERY_FIELDS)
 
-    logD(mod, fun, `options: ${beautify(options)}`)
-
-    // logD(mod, fun, `filter: ${beautify(filter)}`)
+    // logD(mod, fun, `options: ${beautify(options)}`)
 
     // const [sortOptions] = toMongoSortOptions({}, sortBy, { [idField]: 1 })
     const sortOptions = {}
@@ -1346,14 +1345,14 @@ export const getEnsuredOrganizationDbIdWithJson = (organizationJson) =>
 export const getOrganizationDbIdWithJson = (organizationJson) =>
   getDbIdWithJson(OBJ_ORGANIZATIONS, organizationJson)
 
-export const searchOrganziations = (organizationStatus, linkedProducerStatus) => {
+export const dbSearchOrganizations = (organizationStatus, linkedProducerStatus) => {
   const filter = {}
-  if (organizationStatus !== undefined) {
+  if (organizationStatus !== undefined)
     filter[API_ORGANIZATION_VALIDATION_STATUS] = organizationStatus
-  }
-  if (linkedProducerStatus !== undefined) {
+
+  if (linkedProducerStatus !== undefined)
     filter[API_ORGANIZATION_ATTACHMENT_STATUS] = linkedProducerStatus
-  }
+
   return Organization.find(filter)
 }
 

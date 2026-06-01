@@ -275,8 +275,6 @@ export const DICT_LANG = 'lang'
 export const DICT_TEXT = 'text'
 
 // Thesaurus: rich dictionary entries
-export const RICH_DICT_LANG = 'lang'
-export const RICH_DICT_TEXT = 'text'
 export const RICH_DICT_HTML = 'html'
 
 // Licences types
