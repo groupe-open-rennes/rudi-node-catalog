@@ -29,7 +29,7 @@ export const FileTypes = [
   'application/json', // (.json)
   'application/ld+json', // (.jsonld)
   'application/msword', // (.doc)
-  'application/netcdf', // (.nc, .cdf)
+  'application/netcdf', // (.nc, .cdf, .netcdf)
   'application/octet-stream', // (.bin)
   'application/pdf', // (.pdf)
   'application/sql', // (.sql)
@@ -65,7 +65,7 @@ export const FileTypes = [
   'image/gif', // (.gif)
   'image/jpeg', // (.jpg, .jpeg)
   'image/png', // (.png)
-  'image/tiff', // (.tif | .tiff)
+  'image/tiff', // (.tif, .tiff)
   'image/vnd.microsoft.icon', // (.ico)
   'image/webp', // (.webp)
   'image/x-mng', // (.mng)
@@ -134,6 +134,7 @@ export const Extensions = {
   mpeg: 'video/mpeg',
   mpg: 'video/mpeg',
   nc: 'application/netcdf',
+  netcdf: 'application/netcdf',
   odp: 'application/vnd.oasis.opendocument.presentation',
   ods: 'application/vnd.oasis.opendocument.spreadsheet',
   odt: 'application/vnd.oasis.opendocument.text',
