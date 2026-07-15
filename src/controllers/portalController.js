@@ -185,7 +185,7 @@ export const createPortalOrganization = async (organization) => {
   logT(mod, fun)
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
 
-  if (!organization) throw BadRequestError('Input organization should be defined')
+  if (!organization) throw new BadRequestError('Input organization should be defined')
 
   try {
     return await httpPost(
@@ -206,9 +206,9 @@ export const isOrganizationAttached = async (req, reply) => {
 
   try {
     const organizationId = req.params?.[PARAM_ID]
-    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!organizationId) throw new BadRequestError(`Organization UUID is empty`)
     if (!isUUID(organizationId))
-      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
+      throw new BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
 
     return await httpGet(
@@ -281,9 +281,9 @@ export const attachOrganization = async (req, reply) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   try {
     const organizationId = req.params?.[PARAM_ID]
-    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!organizationId) throw new BadRequestError(`Organization UUID is empty`)
     if (!isUUID(organizationId))
-      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
+      throw new BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
 
     // Request the attach action on Portal
@@ -320,9 +320,9 @@ export const detachOrganization = async (req, reply) => {
   if (isPortalConnectionDisabled()) return NO_PORTAL_MSG
   try {
     const organizationId = req.params?.[PARAM_ID]
-    if (!organizationId) throw BadRequestError(`Organization UUID is empty`)
+    if (!organizationId) throw new BadRequestError(`Organization UUID is empty`)
     if (!isUUID(organizationId))
-      throw BadRequestError(`Organization UUID is invalid: ${organizationId}`)
+      throw new BadRequestError(`Organization UUID is invalid: ${organizationId}`)
     logI(mod, fun, `organizationId: ${organizationId}`)
 
     try {
