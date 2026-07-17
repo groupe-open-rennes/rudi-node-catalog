@@ -98,7 +98,7 @@ export const logLine = (logLevel, srcMod, srcFun, msg = '<-', shouldAddLogEntry 
     if (SHOULD_LOG_CONSOLE)
       wLogger.log({ level: logLevel, message: displayStr(srcMod, srcFun, msg) })
     // console.log(displayStr(srcMod, srcFun, msg))
-    if (shouldAddLogEntry) addLogEntry(logLevel, srcMod, srcFun, msg)
+    //if (shouldAddLogEntry) addLogEntry(logLevel, srcMod, srcFun, msg)
     if (SHOULD_SYSLOG && msg) {
       if (`${srcMod}${srcFun}` === '') sysLog(logLevel, msg, logWhere(srcMod, srcFun))
       else sysLog(logLevel, displayStr(srcMod, srcFun, msg), logWhere(srcMod, srcFun))

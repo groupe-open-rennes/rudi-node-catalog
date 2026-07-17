@@ -21,7 +21,7 @@ import { USER_AGENT } from '../config/constApi.js'
 import { beautify, isNotEmptyArray } from './jsUtils.js'
 // import { getEnvironment } from '../controllers/sysController.js'
 import { BadRequestError, RudiError } from './errors.js'
-import { logD, logI, logT, logW } from './logging.js'
+import { logD, logE, logI, logT, logW } from './logging.js'
 
 // -------------------------------------------------------------------------------------------------
 // Functions: header treatments
@@ -182,6 +182,7 @@ const axiosWithRetry = async (
       // eslint-disable-next-line no-await-in-loop
       return await axios({ ...axiosConf, timeout: attemptTimeout, headers })
     } catch (err) {
+      logE(mod, fun, `Error on request ${axiosConf.url}: ${err.message || err}`)
       const status = err.response?.status
       const shouldRetry = err.code === 'ECONNABORTED' || (status && status >= 500)
 
