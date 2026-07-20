@@ -561,7 +561,10 @@ const getNewTokenFromPortal = async () => {
     const portalAuthUrl = getUrlPortalAuthGet()
     let portalAnswer
     try {
-      portalAnswer = await directPost(portalAuthUrl, portalRequestBody, basicAuthHeaders)
+      portalAnswer = await directPost(portalAuthUrl, portalRequestBody, {
+        ...defaultPortalRequestOptions(),
+        ...basicAuthHeaders,
+      })
       // logT(mod, fun, 'OK portal answered')
     } catch (err) {
       logE(mod, fun, `ERR GET portal JWT: ${beautify(err)}`)
