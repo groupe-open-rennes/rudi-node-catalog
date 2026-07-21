@@ -257,6 +257,7 @@ export async function runMigrations(isDirect = false) {
   const fun = 'runMigrations'
   let dbBackupPath
   try {
+    logNoDB.debug(mod, fun, `Connecting to MongoDB at ${MONGODB_URI} ...`)
     await migrationConnection.openUri(MONGODB_URI)
     logNoDB.debug(mod, fun, `Connected to MongoDB at ${MONGODB_URI}`)
 
