@@ -7,7 +7,7 @@ import path from 'path'
 import { getConf } from '../src/config/appOptions.js'
 import { getDbFullUri } from '../src/config/confSystem.js'
 import { logD, logE, logI } from '../src/utils/logging.js'
-import { Migration } from './model/migrationSchema.js'
+import { Migration } from './model/migrationSchema.js' // ! ajoute des logs en BD
 
 const MIGRATION_SECTION = 'migration'
 const AUTO_UPDATE_SCHEMAS = getConf(MIGRATION_SECTION, 'auto_update_schema', true)
